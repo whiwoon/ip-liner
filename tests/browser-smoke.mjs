@@ -106,6 +106,8 @@ async function main() {
     out.traceGap = window.__ipLinerTest.getTrace();
     window.__ipLinerTest.traceIp('192.168.20.3');
     out.traceRange = window.__ipLinerTest.getTrace();
+    window.__ipLinerTest.traceIp('100.64.6.5');
+    out.traceCidr = window.__ipLinerTest.getTrace();
     return out;
   })()`, 160000);
 
@@ -132,6 +134,9 @@ async function main() {
   assert.match(results.traceGap, /셀번호: C2/);
   assert.match(results.traceGap, /직접 추출 IP 여부: 아니오/);
   assert.match(results.traceRange, /셀번호: C4/);
+  assert.match(results.excelOutput, /100\.64\.6\.0\/25/);
+  assert.match(results.traceCidr, /100\.64\.6\.0\/25/);
+  assert.match(results.traceCidr, /셀번호: C6/);
   console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats, excelStats: results.excelStats }, null, 2));
 }
 
