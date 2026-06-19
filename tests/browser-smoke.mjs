@@ -126,9 +126,12 @@ async function main() {
   assert.match(results.excelStats, /IP 후보/);
   assert.match(results.excelText, /192\.168\.20\.1-5/);
   assert.match(results.excelOutput, /192\.168\.10\.1-25/);
-  assert.match(results.traceGap, /Audit Targets!C2/);
+  assert.match(results.excelOutput, /100\.64\.4\.250-255/);
+  assert.match(results.excelOutput, /100\.64\.5\.0-10/);
+  assert.match(results.traceGap, /시트명: Audit Targets/);
+  assert.match(results.traceGap, /셀번호: C2/);
   assert.match(results.traceGap, /직접 추출 IP 여부: 아니오/);
-  assert.match(results.traceRange, /Audit Targets!C4/);
+  assert.match(results.traceRange, /셀번호: C4/);
   console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats, excelStats: results.excelStats }, null, 2));
 }
 
