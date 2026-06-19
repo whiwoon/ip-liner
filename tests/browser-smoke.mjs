@@ -102,7 +102,7 @@ async function main() {
     setSel('groupPolicy', 'expand');
     await window.__ipLinerTest.processWithOverrides(null);
     out.excelOutput = window.__ipLinerTest.getLastOutput();
-    window.__ipLinerTest.traceIp('192.168.10.3');
+    window.__ipLinerTest.traceIp('192.168.10.4');
     out.traceGap = window.__ipLinerTest.getTrace();
     window.__ipLinerTest.traceIp('192.168.20.3');
     out.traceRange = window.__ipLinerTest.getTrace();
@@ -125,10 +125,10 @@ async function main() {
   assert.match(results.sample.log, /총 입력 건수: 5,000개/);
   assert.match(results.excelStats, /IP 후보/);
   assert.match(results.excelText, /192\.168\.20\.1-5/);
-  assert.match(results.excelOutput, /192\.168\.10\.1-6/);
-  assert.match(results.traceGap, /Audit Targets!B2/);
+  assert.match(results.excelOutput, /192\.168\.10\.1-25/);
+  assert.match(results.traceGap, /Audit Targets!C2/);
   assert.match(results.traceGap, /직접 추출 IP 여부: 아니오/);
-  assert.match(results.traceRange, /Audit Targets!B4/);
+  assert.match(results.traceRange, /Audit Targets!C4/);
   console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats, excelStats: results.excelStats }, null, 2));
 }
 

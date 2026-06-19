@@ -48,7 +48,9 @@ Firewall Scope!B3 = 10.20.1.10-10.20.1.20
 
 ## 테스트용 샘플
 
-`samples/sample-5000.txt`에 5,000줄짜리 샘플 목록이 들어 있습니다.
+`samples/sample-5000.txt`에 5,000줄짜리 텍스트 샘플이 들어 있습니다.
+
+`samples/sample-excel-targets.xlsx`에는 여러 기관/업체 양식을 흉내낸 엑셀 샘플이 들어 있습니다. 다중 시트, 문장 속 IP, 쉼표/공백 혼합, 축약/전체 범위, CIDR, 잘못된 IP, 중복 IP, 큰 단일 IP 목록을 포함합니다.
 
 ## 로컬 테스트
 
