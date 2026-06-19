@@ -54,8 +54,14 @@ async function main() {
   await sleep(300);
 
   const sample = readFileSync(`${root}samples/sample-5000.txt`, 'utf8');
+  const sampleXlsxB64 = readFileSync(`${root}samples/sample-excel-targets.xlsx`).toString('base64');
   const results = await evaluate(`(async () => {
     const $ = id => document.getElementById(id);
+    const readyStart = performance.now();
+    while (!window.__ipLinerTest) {
+      if (performance.now() - readyStart > 30000) throw new Error('app not ready');
+      await new Promise(r => setTimeout(r, 50));
+    }
     function setSel(id, v) { $(id).value = v; $(id).dispatchEvent(new Event('change', { bubbles: true })); }
     async function run(input, opts = {}, overrides = null) {
       $('inputText').value = input;
@@ -87,6 +93,19 @@ async function main() {
     document.querySelector('.confirmRow select').dispatchEvent(new Event('change', { bubbles: true }));
     out.confirmPreviewExclude = document.querySelector('.confirmPreview')?.textContent || '';
     out.sample = await run(${JSON.stringify(sample)}, { ambiguousPolicy: 'parse', groupPolicy: 'contiguous' });
+    const bytes = Uint8Array.from(atob('${sampleXlsxB64}'), c => c.charCodeAt(0));
+    const file = new File([bytes], 'sample-excel-targets.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    await window.__ipLinerTest.loadExcel(file);
+    out.excelStats = $('excelStats').textContent;
+    out.excelText = $('inputText').value;
+    setSel('ambiguousPolicy', 'parse');
+    setSel('groupPolicy', 'expand');
+    await window.__ipLinerTest.processWithOverrides(null);
+    out.excelOutput = window.__ipLinerTest.getLastOutput();
+    window.__ipLinerTest.traceIp('192.168.10.3');
+    out.traceGap = window.__ipLinerTest.getTrace();
+    window.__ipLinerTest.traceIp('192.168.20.3');
+    out.traceRange = window.__ipLinerTest.getTrace();
     return out;
   })()`, 160000);
 
@@ -104,7 +123,13 @@ async function main() {
   assert.match(results.confirmPreviewExclude, /결과에 넣지 않음/);
   assert.match(results.sample.stats, /비표준 입력 4개/);
   assert.match(results.sample.log, /총 입력 건수: 5,000개/);
-  console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats }, null, 2));
+  assert.match(results.excelStats, /IP 후보/);
+  assert.match(results.excelText, /192\.168\.20\.1-5/);
+  assert.match(results.excelOutput, /192\.168\.10\.1-6/);
+  assert.match(results.traceGap, /Audit Targets!B2/);
+  assert.match(results.traceGap, /직접 추출 IP 여부: 아니오/);
+  assert.match(results.traceRange, /Audit Targets!B4/);
+  console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats, excelStats: results.excelStats }, null, 2));
 }
 
 try {
