@@ -74,6 +74,7 @@ async function main() {
     }
     const out = {};
     out.title = document.title;
+    out.policyLabels = [...$('ambiguousPolicy').options].map(o => o.textContent);
     out.confirmExists = [...$('ambiguousPolicy').options].some(o => o.value === 'confirm');
     out.conservative = await run('192.168.1.1\\n192.168.1.2\\n192.168.1.3\\n192.168.1.10', { groupPolicy: 'contiguous' });
     out.expand = await run('192.168.1.3\\n192.168.1.23\\n192.168.1.233', { groupPolicy: 'expand' });
@@ -81,18 +82,26 @@ async function main() {
     out.commaExclude = await run('192.168.1.1,192.168.1.2', { ambiguousPolicy: 'exclude', groupPolicy: 'single' });
     out.spaceParse = await run('192.168.1.1 192.168.1.2', { ambiguousPolicy: 'parse', groupPolicy: 'single' });
     out.confirmWait = await run('192.168.1.1,192.168.1.2', { ambiguousPolicy: 'confirm', groupPolicy: 'single' });
+    out.confirmPreviewInitial = document.querySelector('.confirmPreview')?.textContent || '';
+    document.querySelector('.confirmRow select').value = 'exclude';
+    document.querySelector('.confirmRow select').dispatchEvent(new Event('change', { bubbles: true }));
+    out.confirmPreviewExclude = document.querySelector('.confirmPreview')?.textContent || '';
     out.sample = await run(${JSON.stringify(sample)}, { ambiguousPolicy: 'parse', groupPolicy: 'contiguous' });
     return out;
   })()`, 160000);
 
   assert.equal(results.title, 'IP Liner');
   assert.equal(results.confirmExists, true);
+  assert.deepEqual(results.policyLabels, ['분리해서 IP로 변환', '원문 그대로 출력', '결과에서 제외', '비표준마다 직접 선택']);
   assert.equal(results.conservative.output, '192.168.1.1-3\n192.168.1.10');
   assert.equal(results.expand.output, '192.168.1.3-233');
   assert.equal(results.commaRaw.output, '192.168.1.1,192.168.1.2');
   assert.equal(results.commaExclude.output, '');
   assert.equal(results.spaceParse.output, '192.168.1.1\n192.168.1.2');
   assert.equal(results.confirmWait.status, '사용자 확인 대기');
+  assert.match(results.confirmPreviewInitial, /출력 예시 \(2개\):/);
+  assert.match(results.confirmPreviewInitial, /192\.168\.1\.1/);
+  assert.match(results.confirmPreviewExclude, /결과에 넣지 않음/);
   assert.match(results.sample.stats, /비표준 입력 4개/);
   assert.match(results.sample.log, /총 입력 건수: 5,000개/);
   console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats }, null, 2));
