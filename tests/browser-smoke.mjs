@@ -82,6 +82,8 @@ async function main() {
     out.hasTitlePill = !!document.querySelector('.pill');
     out.layoutOrder = [...document.querySelectorAll('.left-stack > .panel, .right-stack > .panel')].map(x => x.className);
     out.panelBorders = [...document.querySelectorAll('.input-panel,.controls-panel,.output-panel,.trace-panel,.log-panel')].map(x => getComputedStyle(x).borderTopWidth);
+    out.controlsHeight = Math.round(document.querySelector('.controls-panel').getBoundingClientRect().height);
+    out.controlsBackground = getComputedStyle(document.querySelector('.controls-panel')).backgroundColor;
     out.traceHeading = document.querySelector('.trace-panel h2').textContent;
     out.logHeading = document.querySelector('.log-panel h2').textContent;
     out.hasAmbiguousPolicy = !!$('ambiguousPolicy');
@@ -123,6 +125,8 @@ async function main() {
   assert.equal(results.hasTitlePill, false);
   assert.deepEqual(results.layoutOrder, ['panel input-panel', 'panel controls-panel', 'panel output-panel', 'panel trace-panel', 'panel log-panel']);
   assert.deepEqual(results.panelBorders, ['0px', '0px', '0px', '0px', '0px']);
+  assert.ok(results.controlsHeight <= 170);
+  assert.equal(results.controlsBackground, 'rgba(0, 0, 0, 0)');
   assert.equal(results.traceHeading, '스캔 IP 역추적');
   assert.equal(results.logHeading, '처리 로그');
   assert.equal(results.hasAmbiguousPolicy, false);
