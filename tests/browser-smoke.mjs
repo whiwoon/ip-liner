@@ -63,14 +63,11 @@ async function main() {
       await new Promise(r => setTimeout(r, 50));
     }
     function setSel(id, v) { $(id).value = v; $(id).dispatchEvent(new Event('change', { bubbles: true })); }
-    async function run(input, opts = {}, overrides = null) {
+    async function run(input, opts = {}, replacements = null) {
       $('inputText').value = input;
-      setSel('ambiguousPolicy', opts.ambiguousPolicy || 'parse');
-      setSel('groupPolicy', opts.groupPolicy || 'expand');
-      setSel('rangeFormat', opts.rangeFormat || 'short');
-      setSel('previewLimit', opts.previewLimit || '1000');
+      setSel('groupPolicy', opts.groupPolicy || 'single');
       const t0 = performance.now();
-      if (overrides) await window.__ipLinerTest.processWithOverrides([...overrides]); else $('runBtn').click();
+      if (replacements) await window.__ipLinerTest.processWithOverrides([...replacements]); else $('runBtn').click();
       const start = performance.now();
       while (!['완료','사용자 확인 대기'].includes($('status').textContent)) {
         if (performance.now() - start > 90000) throw new Error('run timeout: ' + $('status').textContent);
@@ -80,27 +77,28 @@ async function main() {
     }
     const out = {};
     out.title = document.title;
-    out.policyLabels = [...$('ambiguousPolicy').options].map(o => o.textContent);
-    out.confirmExists = [...$('ambiguousPolicy').options].some(o => o.value === 'confirm');
-    out.conservative = await run('192.168.1.1\\n192.168.1.2\\n192.168.1.3\\n192.168.1.10', { groupPolicy: 'contiguous' });
+    out.hasAmbiguousPolicy = !!$('ambiguousPolicy');
+    out.hasRangeFormat = !!$('rangeFormat');
+    out.hasPreviewLimit = !!$('previewLimit');
+    out.groupLabel = document.querySelector('label[for="groupPolicy"]').textContent;
+    out.groupOptions = [...$('groupPolicy').options].map(o => o.textContent);
+    out.single = await run('192.168.1.1,192.168.1.2\\n192.168.1.1', { groupPolicy: 'single' });
+    out.cidr = await run('192.168.2.0/30\\n192.168.3.4/32\\n192.168.4.0/31', { groupPolicy: 'single' });
+    out.tilde = await run('192.168.5.1~3\\nhttp://192.168.6.8:443', { groupPolicy: 'single' });
     out.expand = await run('192.168.1.3\\n192.168.1.23\\n192.168.1.233', { groupPolicy: 'expand' });
-    out.commaRaw = await run('192.168.1.1,192.168.1.2', { ambiguousPolicy: 'raw', groupPolicy: 'single' });
-    out.commaExclude = await run('192.168.1.1,192.168.1.2', { ambiguousPolicy: 'exclude', groupPolicy: 'single' });
-    out.spaceParse = await run('192.168.1.1 192.168.1.2', { ambiguousPolicy: 'parse', groupPolicy: 'single' });
-    out.confirmWait = await run('192.168.1.1,192.168.1.2', { ambiguousPolicy: 'confirm', groupPolicy: 'single' });
-    out.confirmPreviewInitial = document.querySelector('.confirmPreview')?.textContent || '';
-    document.querySelector('.confirmRow select').value = 'exclude';
-    document.querySelector('.confirmRow select').dispatchEvent(new Event('change', { bubbles: true }));
-    out.confirmPreviewExclude = document.querySelector('.confirmPreview')?.textContent || '';
-    out.sample = await run(${JSON.stringify(sample)}, { ambiguousPolicy: 'parse', groupPolicy: 'contiguous' });
+    out.subnet = await run('192.168.7.44', { groupPolicy: 'subnet' });
+    out.manualWait = await run('192.168.0.999\\nabc', { groupPolicy: 'single' });
+    out.manualRows = [...document.querySelectorAll('.confirmRow code')].map(x => x.textContent);
+    out.manualReasons = [...document.querySelectorAll('.confirmRow .reason')].map(x => x.textContent).join('\\n');
+    out.manualApplied = await run('192.168.0.999\\nabc', { groupPolicy: 'single' }, ['192.168.0.5', '']);
+    out.sample = await run(${JSON.stringify(sample)}, { groupPolicy: 'single' });
     const bytes = Uint8Array.from(atob('${sampleXlsxB64}'), c => c.charCodeAt(0));
     const file = new File([bytes], 'sample-excel-targets.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     await window.__ipLinerTest.loadExcel(file);
     out.excelStats = $('excelStats').textContent;
     out.excelText = $('inputText').value;
-    setSel('ambiguousPolicy', 'parse');
     setSel('groupPolicy', 'expand');
-    await window.__ipLinerTest.processWithOverrides(null);
+    await window.__ipLinerTest.processWithOverrides(Array(20).fill(''));
     out.excelOutput = window.__ipLinerTest.getLastOutput();
     window.__ipLinerTest.traceIp('192.168.10.4');
     out.traceGap = window.__ipLinerTest.getTrace();
@@ -112,30 +110,37 @@ async function main() {
   })()`, 160000);
 
   assert.equal(results.title, 'IP Liner');
-  assert.equal(results.confirmExists, true);
-  assert.deepEqual(results.policyLabels, ['분리해서 IP로 변환', '원문 그대로 출력', '결과에서 제외', '비표준마다 직접 선택']);
-  assert.equal(results.conservative.output, '192.168.1.1-3\n192.168.1.10');
-  assert.equal(results.expand.output, '192.168.1.3-233');
-  assert.equal(results.commaRaw.output, '192.168.1.1,192.168.1.2');
-  assert.equal(results.commaExclude.output, '');
-  assert.equal(results.spaceParse.output, '192.168.1.1\n192.168.1.2');
-  assert.equal(results.confirmWait.status, '사용자 확인 대기');
-  assert.match(results.confirmPreviewInitial, /출력 예시 \(2개\):/);
-  assert.match(results.confirmPreviewInitial, /192\.168\.1\.1/);
-  assert.match(results.confirmPreviewExclude, /결과에 넣지 않음/);
-  assert.match(results.sample.stats, /비표준 입력 4개/);
+  assert.equal(results.hasAmbiguousPolicy, false);
+  assert.equal(results.hasRangeFormat, false);
+  assert.equal(results.hasPreviewLimit, false);
+  assert.equal(results.groupLabel, '범위 추가 선택');
+  assert.deepEqual(results.groupOptions, ['범위 추가 선택 안함', '입력 구간만 확장', '대역 전체 추가']);
+  assert.equal(results.single.output, '192.168.1.1\n192.168.1.2');
+  assert.equal(results.cidr.output, '192.168.2.1\n192.168.2.2\n192.168.3.4\n192.168.4.0\n192.168.4.1');
+  assert.equal(results.tilde.output, '192.168.5.1\n192.168.5.2\n192.168.5.3\n192.168.6.8');
+  assert.equal(results.expand.output.split('\n').length, 231);
+  assert.match(results.expand.output, /^192\.168\.1\.3\n/);
+  assert.match(results.expand.output, /\n192\.168\.1\.233$/);
+  assert.match(results.expand.output, /192\.168\.1\.22/);
+  assert.equal(results.subnet.output.split('\n').length, 256);
+  assert.match(results.subnet.output, /^192\.168\.7\.0\n/);
+  assert.match(results.subnet.output, /\n192\.168\.7\.255$/);
+  assert.equal(results.manualWait.status, '사용자 확인 대기');
+  assert.deepEqual(results.manualRows, ['192.168.0.999', 'abc']);
+  assert.match(results.manualReasons, /잘못된 IP/);
+  assert.equal(results.manualApplied.output, '192.168.0.5');
+  assert.match(results.sample.stats, /최종 출력 IP/);
   assert.match(results.sample.log, /총 입력 건수: 5,000개/);
   assert.match(results.excelStats, /IP 후보/);
   assert.match(results.excelText, /192\.168\.20\.1-5/);
-  assert.match(results.excelOutput, /192\.168\.10\.1-25/);
-  assert.match(results.excelOutput, /100\.64\.4\.250-255/);
-  assert.match(results.excelOutput, /100\.64\.5\.0-10/);
+  assert.match(results.excelOutput, /192\.168\.10\.25/);
+  assert.match(results.excelOutput, /100\.64\.4\.250/);
+  assert.match(results.excelOutput, /100\.64\.5\.10/);
   assert.match(results.traceGap, /시트명: Audit Targets/);
   assert.match(results.traceGap, /셀번호: C2/);
   assert.match(results.traceGap, /직접 추출 IP 여부: 아니오/);
   assert.match(results.traceRange, /셀번호: C4/);
-  assert.match(results.excelOutput, /100\.64\.6\.0\/25/);
-  assert.match(results.traceCidr, /100\.64\.6\.0\/25/);
+  assert.match(results.excelOutput, /100\.64\.6\.5/);
   assert.match(results.traceCidr, /셀번호: C6/);
   console.log(JSON.stringify({ ok: true, sampleMs: results.sample.ms, sampleStats: results.sample.stats, excelStats: results.excelStats }, null, 2));
 }
