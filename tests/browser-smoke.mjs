@@ -77,6 +77,10 @@ async function main() {
     }
     const out = {};
     out.title = document.title;
+    out.heading = document.querySelector('h1').textContent;
+    out.desc = document.querySelector('.desc').textContent;
+    out.hasTitlePill = !!document.querySelector('.pill');
+    out.gridAreas = [...document.querySelectorAll('.workspace > .panel')].map(x => getComputedStyle(x).gridArea);
     out.hasAmbiguousPolicy = !!$('ambiguousPolicy');
     out.hasRangeFormat = !!$('rangeFormat');
     out.hasPreviewLimit = !!$('previewLimit');
@@ -91,6 +95,7 @@ async function main() {
     out.manualRows = [...document.querySelectorAll('.confirmRow code')].map(x => x.textContent);
     out.manualReasons = [...document.querySelectorAll('.confirmRow .reason')].map(x => x.textContent).join('\\n');
     out.manualApplied = await run('192.168.0.999\\nabc', { groupPolicy: 'single' }, ['192.168.0.5', '']);
+    out.logClasses = [...document.querySelectorAll('#log .log-line')].map(x => x.className);
     out.sample = await run(${JSON.stringify(sample)}, { groupPolicy: 'single' });
     const bytes = Uint8Array.from(atob('${sampleXlsxB64}'), c => c.charCodeAt(0));
     const file = new File([bytes], 'sample-excel-targets.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
@@ -110,6 +115,10 @@ async function main() {
   })()`, 160000);
 
   assert.equal(results.title, 'IP Liner');
+  assert.equal(results.heading, 'IP Liner');
+  assert.match(results.desc, /IP 목록을 붙여넣거나 파일로 올려/);
+  assert.equal(results.hasTitlePill, false);
+  assert.deepEqual(results.gridAreas, ['input', 'controls', 'output', 'log']);
   assert.equal(results.hasAmbiguousPolicy, false);
   assert.equal(results.hasRangeFormat, false);
   assert.equal(results.hasPreviewLimit, false);
@@ -129,6 +138,8 @@ async function main() {
   assert.deepEqual(results.manualRows, ['192.168.0.999', 'abc']);
   assert.match(results.manualReasons, /잘못된 IP/);
   assert.equal(results.manualApplied.output, '192.168.0.5');
+  assert.ok(results.logClasses.some(x => x.includes('bad')));
+  assert.ok(results.logClasses.some(x => x.includes('ok')));
   assert.match(results.sample.stats, /최종 출력 IP/);
   assert.match(results.sample.log, /총 입력 건수: 5,000개/);
   assert.match(results.excelStats, /IP 후보/);
