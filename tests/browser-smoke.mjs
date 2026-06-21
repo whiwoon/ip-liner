@@ -80,7 +80,10 @@ async function main() {
     out.heading = document.querySelector('h1').textContent;
     out.desc = document.querySelector('.desc').textContent;
     out.hasTitlePill = !!document.querySelector('.pill');
-    out.gridAreas = [...document.querySelectorAll('.workspace > .panel')].map(x => getComputedStyle(x).gridArea);
+    out.layoutOrder = [...document.querySelectorAll('.left-stack > .panel, .right-stack > .panel')].map(x => x.className);
+    out.panelBorders = [...document.querySelectorAll('.input-panel,.controls-panel,.output-panel,.trace-panel,.log-panel')].map(x => getComputedStyle(x).borderTopWidth);
+    out.traceHeading = document.querySelector('.trace-panel h2').textContent;
+    out.logHeading = document.querySelector('.log-panel h2').textContent;
     out.hasAmbiguousPolicy = !!$('ambiguousPolicy');
     out.hasRangeFormat = !!$('rangeFormat');
     out.hasPreviewLimit = !!$('previewLimit');
@@ -118,7 +121,10 @@ async function main() {
   assert.equal(results.heading, 'IP Liner');
   assert.match(results.desc, /IP 목록을 붙여넣거나 파일로 올려/);
   assert.equal(results.hasTitlePill, false);
-  assert.deepEqual(results.gridAreas, ['input', 'controls', 'output', 'log']);
+  assert.deepEqual(results.layoutOrder, ['panel input-panel', 'panel controls-panel', 'panel output-panel', 'panel trace-panel', 'panel log-panel']);
+  assert.deepEqual(results.panelBorders, ['0px', '0px', '0px', '0px', '0px']);
+  assert.equal(results.traceHeading, '스캔 IP 역추적');
+  assert.equal(results.logHeading, '처리 로그');
   assert.equal(results.hasAmbiguousPolicy, false);
   assert.equal(results.hasRangeFormat, false);
   assert.equal(results.hasPreviewLimit, false);
