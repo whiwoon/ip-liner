@@ -62,10 +62,14 @@ async function main() {
       if (performance.now() - readyStart > 30000) throw new Error('app not ready');
       await new Promise(r => setTimeout(r, 50));
     }
-    function setSel(id, v) { $(id).value = v; $(id).dispatchEvent(new Event('change', { bubbles: true })); }
+    function choosePolicy(v) {
+      document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb => { cb.checked = cb.value === v; cb.dispatchEvent(new Event('change', { bubbles: true })); });
+    }
     async function run(input, opts = {}, replacements = null) {
+      $('pasteModeBtn').click();
       $('inputText').value = input;
-      setSel('groupPolicy', opts.groupPolicy || 'single');
+      $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
+      choosePolicy(opts.groupPolicy || 'single');
       const t0 = performance.now();
       if (replacements) await window.__ipLinerTest.processWithOverrides([...replacements]); else $('runBtn').click();
       const start = performance.now();
@@ -79,18 +83,26 @@ async function main() {
     out.title = document.title;
     out.heading = document.querySelector('h1').textContent;
     out.desc = document.querySelector('.desc').textContent;
+    out.initialVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
+    out.defaultAttach = $('attachMode').classList.contains('active') && $('attachModeBtn').classList.contains('active');
+    out.hasDropZone = !!$('dropZone');
+    out.rangeInitiallyHidden = $('rangePanel').classList.contains('hidden');
     out.hasTitlePill = !!document.querySelector('.pill');
-    out.layoutOrder = [...document.querySelectorAll('.left-stack > .panel, .right-stack > .panel')].map(x => x.className);
-    out.panelBorders = [...document.querySelectorAll('.input-panel,.controls-panel,.output-panel,.trace-panel,.log-panel')].map(x => getComputedStyle(x).borderTopWidth);
-    out.controlsHeight = Math.round(document.querySelector('.controls-panel').getBoundingClientRect().height);
-    out.controlsBackground = getComputedStyle(document.querySelector('.controls-panel')).backgroundColor;
+    out.flowOrder = [...document.querySelectorAll('main > section')].map(x => x.id);
+    out.panelBorders = [...document.querySelectorAll('.input-panel,.range-panel,.run-panel,.progress-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
     out.traceHeading = document.querySelector('.trace-panel h2').textContent;
-    out.logHeading = document.querySelector('.log-panel h2').textContent;
+    out.logHeading = document.querySelector('.progress-panel h2').textContent;
     out.hasAmbiguousPolicy = !!$('ambiguousPolicy');
     out.hasRangeFormat = !!$('rangeFormat');
     out.hasPreviewLimit = !!$('previewLimit');
-    out.groupLabel = document.querySelector('label[for="groupPolicy"]').textContent;
-    out.groupOptions = [...$('groupPolicy').options].map(o => o.textContent);
+    out.hasGroupSelect = !!$('groupPolicy');
+    out.groupLabel = document.querySelector('.range-panel .section-title').textContent;
+    out.groupOptions = [...document.querySelectorAll('.check-card strong')].map(o => o.textContent);
+    $('pasteModeBtn').click(); $('inputText').value='12.123.12.201/20\\n123.22.92.250/29'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
+    out.afterInputVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
+    choosePolicy('single');
+    out.afterPolicyVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
+    out.normalizedCidr = await run('12.123.12.201/20\\n123.22.92.250/29', { groupPolicy: 'single' });
     out.single = await run('192.168.1.1,192.168.1.2\\n192.168.1.1', { groupPolicy: 'single' });
     out.cidr = await run('192.168.2.0/30\\n192.168.3.4/32\\n192.168.4.0/31', { groupPolicy: 'single' });
     out.tilde = await run('192.168.5.1~3\\nhttp://192.168.6.8:443', { groupPolicy: 'single' });
@@ -107,7 +119,7 @@ async function main() {
     await window.__ipLinerTest.loadExcel(file);
     out.excelStats = $('excelStats').textContent;
     out.excelText = $('inputText').value;
-    setSel('groupPolicy', 'expand');
+    choosePolicy('expand');
     await window.__ipLinerTest.processWithOverrides(Array(20).fill(''));
     out.excelOutput = window.__ipLinerTest.getLastOutput();
     window.__ipLinerTest.traceIp('192.168.10.4');
@@ -121,19 +133,27 @@ async function main() {
 
   assert.equal(results.title, 'IP Liner');
   assert.equal(results.heading, 'IP Liner');
-  assert.match(results.desc, /IP 목록을 붙여넣거나 파일로 올려/);
+  assert.match(results.desc, /다음 단계/);
+  assert.deepEqual(results.initialVisible, ['inputPanel']);
+  assert.equal(results.defaultAttach, true);
+  assert.equal(results.hasDropZone, true);
+  assert.equal(results.rangeInitiallyHidden, true);
   assert.equal(results.hasTitlePill, false);
-  assert.deepEqual(results.layoutOrder, ['panel input-panel', 'panel controls-panel', 'panel output-panel', 'panel trace-panel', 'panel log-panel']);
-  assert.deepEqual(results.panelBorders, ['0px', '0px', '0px', '0px', '0px']);
-  assert.ok(results.controlsHeight <= 170);
-  assert.equal(results.controlsBackground, 'rgba(0, 0, 0, 0)');
-  assert.equal(results.traceHeading, '스캔 IP 역추적');
-  assert.equal(results.logHeading, '처리 로그');
+  assert.deepEqual(results.flowOrder, ['inputPanel', 'rangePanel', 'runPanel', 'progressPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
+  assert.deepEqual(results.panelBorders, ['0px', '0px', '0px', '0px', '0px', '0px', '0px']);
+  assert.equal(results.traceHeading, '역추적');
+  assert.equal(results.logHeading, '처리 로그와 진행률');
   assert.equal(results.hasAmbiguousPolicy, false);
   assert.equal(results.hasRangeFormat, false);
   assert.equal(results.hasPreviewLimit, false);
+  assert.equal(results.hasGroupSelect, false);
   assert.equal(results.groupLabel, '범위 추가 선택');
   assert.deepEqual(results.groupOptions, ['범위 추가 선택 안함', '입력 구간만 확장', '대역 전체 추가']);
+  assert.deepEqual(results.afterInputVisible, ['inputPanel', 'rangePanel']);
+  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'rangePanel', 'runPanel']);
+  assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
+  assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);
+  assert.match(results.normalizedCidr.output, /123\.22\.92\.249/);
   assert.equal(results.single.output, '192.168.1.1\n192.168.1.2');
   assert.equal(results.cidr.output, '192.168.2.1\n192.168.2.2\n192.168.3.4\n192.168.4.0\n192.168.4.1');
   assert.equal(results.tilde.output, '192.168.5.1\n192.168.5.2\n192.168.5.3\n192.168.6.8');
