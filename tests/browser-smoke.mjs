@@ -83,6 +83,8 @@ async function main() {
     out.title = document.title;
     out.heading = document.querySelector('h1').textContent;
     out.desc = document.querySelector('.desc').textContent;
+    out.eyebrow = document.querySelector('.eyebrow')?.textContent || '';
+    out.headerFontSize = getComputedStyle(document.querySelector('h1')).fontSize;
     out.initialVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.defaultAttach = $('attachMode').classList.contains('active') && $('attachModeBtn').classList.contains('active');
     out.hasDropZone = !!$('dropZone');
@@ -127,6 +129,15 @@ async function main() {
     $('traceInput').dispatchEvent(new Event('input', { bubbles: true }));
     out.buttonWidths.trace = Math.round($('traceBtn').getBoundingClientRect().width);
     out.logScroll = { top: $('log').scrollTop, height: $('log').scrollHeight, client: $('log').clientHeight };
+    let downloadName = '';
+    const origCreate = URL.createObjectURL;
+    URL.createObjectURL = () => 'blob:test';
+    const origClick = HTMLAnchorElement.prototype.click;
+    HTMLAnchorElement.prototype.click = function(){ downloadName = this.download; };
+    $('downloadBtn').click();
+    HTMLAnchorElement.prototype.click = origClick;
+    URL.createObjectURL = origCreate;
+    out.downloadName = downloadName;
     out.single = await run('192.168.1.1,192.168.1.2\\n192.168.1.1', { groupPolicy: 'single' });
     out.cidr = await run('192.168.2.0/30\\n192.168.3.4/32\\n192.168.4.0/31', { groupPolicy: 'single' });
     out.tilde = await run('192.168.5.1~3\\nhttp://192.168.6.8:443', { groupPolicy: 'single' });
@@ -155,16 +166,18 @@ async function main() {
     return out;
   })()`, 160000);
 
-  assert.equal(results.title, 'IP Liner');
-  assert.equal(results.heading, 'IP Liner');
-  assert.match(results.desc, /다음 단계/);
+  assert.equal(results.title, '아이피 라이너');
+  assert.equal(results.heading, '아이피 라이너');
+  assert.match(results.desc, /단계/);
+  assert.match(results.eyebrow, /IP 정리 도구/);
+  assert.match(results.headerFontSize, /34px/);
   assert.deepEqual(results.initialVisible, ['inputPanel']);
   assert.equal(results.defaultAttach, true);
   assert.equal(results.hasDropZone, true);
   assert.equal(results.rangeInitiallyHidden, true);
   assert.equal(results.hasTitlePill, false);
   assert.deepEqual(results.flowOrder, ['inputPanel', 'rangePanel', 'runPanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
-  assert.deepEqual(results.panelBorders, ['0px', '0px', '0px', '0px', '0px', '0px', '0px', '0px']);
+  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px']);
   assert.equal(results.traceHeading, '역추적');
   assert.equal(results.progressHeading, '진행률');
   assert.equal(results.logHeading, '처리 로그');
@@ -180,6 +193,7 @@ async function main() {
   assert.ok(Math.abs(results.buttonWidths.copy - results.buttonWidths.download) <= 4);
   assert.ok(results.buttonWidths.trace >= results.buttonWidths.attach - 4);
   assert.ok(results.logScroll.top + results.logScroll.client >= results.logScroll.height - 2);
+  assert.equal(results.downloadName, '아이피-라이너-결과.txt');
   assert.deepEqual(results.afterDragVisible, ['inputPanel', 'rangePanel']);
   assert.match(results.afterDragText, /10\.10\.10\.2/);
   assert.equal(results.afterDragProgressHidden, true);
