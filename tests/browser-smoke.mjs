@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 
 const root = new URL('..', import.meta.url).pathname;
-const fileUrl = `file://${root}index.html`;
+const fileUrl = `file://${root}ip-liner.html`;
 const port = 12000 + Math.floor(Math.random() * 1000);
 const chrome = spawn('/usr/bin/chromium', [
   '--headless=new', '--no-sandbox', `--remote-debugging-port=${port}`,
@@ -62,6 +62,9 @@ async function main() {
       if (performance.now() - readyStart > 30000) throw new Error('app not ready');
       await new Promise(r => setTimeout(r, 50));
     }
+    window.__scrollCalls = [];
+    const originalScrollIntoView = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function(opts) { window.__scrollCalls.push({ id: this.id, opts }); };
     function choosePolicy(v) {
       document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb => { cb.checked = cb.value === v; cb.dispatchEvent(new Event('change', { bubbles: true })); });
     }
@@ -116,6 +119,11 @@ async function main() {
     out.afterDragText = $('inputText').value;
     out.afterDragProgressHidden = $('progressPanel').classList.contains('hidden');
     out.afterDragLogHidden = $('logPanel').classList.contains('hidden');
+    $('clearBtn').click();
+    $('dropZone').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer }));
+    for (let i = 0; i < 80 && !$('inputText').value.includes('10.10.10.2'); i++) await new Promise(r => setTimeout(r, 25));
+    out.afterClearDropText = $('inputText').value;
+    out.afterClearDropVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     $('pasteModeBtn').click(); $('inputText').value='12.123.12.201/20\\n123.22.92.250/29'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
     out.afterInputVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.buttonWidths.clear = Math.round($('clearBtn').getBoundingClientRect().width);
@@ -138,6 +146,9 @@ async function main() {
     HTMLAnchorElement.prototype.click = origClick;
     URL.createObjectURL = origCreate;
     out.downloadName = downloadName;
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    out.scrollCalls = window.__scrollCalls.map(x => x.id).filter(Boolean);
+    Element.prototype.scrollIntoView = originalScrollIntoView;
     out.single = await run('192.168.1.1,192.168.1.2\\n192.168.1.1', { groupPolicy: 'single' });
     out.cidr = await run('192.168.2.0/30\\n192.168.3.4/32\\n192.168.4.0/31', { groupPolicy: 'single' });
     out.tilde = await run('192.168.5.1~3\\nhttp://192.168.6.8:443', { groupPolicy: 'single' });
@@ -166,8 +177,8 @@ async function main() {
     return out;
   })()`, 160000);
 
-  assert.equal(results.title, '아이피 라이너');
-  assert.equal(results.heading, '아이피 라이너');
+  assert.equal(results.title, 'IP Liner');
+  assert.equal(results.heading, 'IP Liner');
   assert.match(results.desc, /단계/);
   assert.match(results.eyebrow, /IP 정리 도구/);
   assert.match(results.headerFontSize, /34px/);
@@ -193,11 +204,17 @@ async function main() {
   assert.ok(Math.abs(results.buttonWidths.copy - results.buttonWidths.download) <= 4);
   assert.ok(results.buttonWidths.trace >= results.buttonWidths.attach - 4);
   assert.ok(results.logScroll.top + results.logScroll.client >= results.logScroll.height - 2);
-  assert.equal(results.downloadName, '아이피-라이너-결과.txt');
+  assert.equal(results.downloadName, 'ip-liner-targets.txt');
+  assert.ok(results.scrollCalls.includes('rangePanel'));
+  assert.ok(results.scrollCalls.includes('runPanel'));
+  assert.ok(results.scrollCalls.includes('progressPanel'));
+  assert.ok(results.scrollCalls.includes('outputPanel'));
   assert.deepEqual(results.afterDragVisible, ['inputPanel', 'rangePanel']);
   assert.match(results.afterDragText, /10\.10\.10\.2/);
   assert.equal(results.afterDragProgressHidden, true);
   assert.equal(results.afterDragLogHidden, true);
+  assert.match(results.afterClearDropText, /10\.10\.10\.2/);
+  assert.deepEqual(results.afterClearDropVisible, ['inputPanel', 'rangePanel']);
   assert.deepEqual(results.afterInputVisible, ['inputPanel', 'rangePanel']);
   assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'rangePanel', 'runPanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
