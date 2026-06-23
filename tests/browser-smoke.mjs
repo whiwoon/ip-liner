@@ -189,7 +189,7 @@ async function main() {
   assert.equal(results.heading, 'IP Liner');
   assert.match(results.desc, /단계/);
   assert.match(results.eyebrow, /IP 정리 도구/);
-  assert.match(results.headerFontSize, /34px/);
+  assert.match(results.headerFontSize, /30px/);
   assert.deepEqual(results.initialVisible, ['inputPanel']);
   assert.equal(results.defaultAttach, true);
   assert.equal(results.hasDropZone, true);
