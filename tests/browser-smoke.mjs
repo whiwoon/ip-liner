@@ -143,6 +143,14 @@ async function main() {
     const origClick = HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click = function(){ downloadName = this.download; };
     $('downloadBtn').click();
+    out.downloadStatus = $('outputActionStatus').textContent;
+    const origClipboard = navigator.clipboard;
+    let copiedText = '';
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText: async text => { copiedText = text; } } });
+    await $('copyBtn').click();
+    out.copyStatus = $('outputActionStatus').textContent;
+    out.copiedText = copiedText;
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: origClipboard });
     HTMLAnchorElement.prototype.click = origClick;
     URL.createObjectURL = origCreate;
     out.downloadName = downloadName;
@@ -204,7 +212,10 @@ async function main() {
   assert.ok(Math.abs(results.buttonWidths.copy - results.buttonWidths.download) <= 4);
   assert.ok(results.buttonWidths.trace >= results.buttonWidths.attach - 4);
   assert.ok(results.logScroll.top + results.logScroll.client >= results.logScroll.height - 2);
-  assert.equal(results.downloadName, 'ip-liner-targets.txt');
+  assert.match(results.downloadName, /^ip-liner-targets-\d{8}-\d{6}\.txt$/);
+  assert.match(results.downloadStatus, /^다운로드 파일명: ip-liner-targets-\d{8}-\d{6}\.txt$/);
+  assert.equal(results.copyStatus, '클립보드에 복사되었습니다.');
+  assert.match(results.copiedText, /^12\.123\.0\.1/);
   assert.ok(results.scrollCalls.includes('rangePanel'));
   assert.ok(results.scrollCalls.includes('runPanel'));
   assert.ok(results.scrollCalls.includes('progressPanel'));
