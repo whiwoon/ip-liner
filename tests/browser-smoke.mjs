@@ -99,6 +99,12 @@ async function main() {
     out.hasGroupSelect = !!$('groupPolicy');
     out.groupLabel = document.querySelector('.range-panel .section-title').textContent;
     out.groupOptions = [...document.querySelectorAll('.check-card strong')].map(o => o.textContent);
+    out.groupOptionTexts = [...document.querySelectorAll('.check-card span')].map(o => o.textContent);
+    out.buttonWidths = {
+      attach: Math.round($('attachModeBtn').getBoundingClientRect().width),
+      paste: Math.round($('pasteModeBtn').getBoundingClientRect().width),
+      clear: null, run: null, copy: null, download: null, trace: null
+    };
     const dragFile = new File(['10.10.10.1\\\\n10.10.10.2'], 'drag-targets.txt', { type: 'text/plain' });
     const dataTransfer = new DataTransfer();
     dataTransfer.items.add(dragFile);
@@ -110,9 +116,17 @@ async function main() {
     out.afterDragLogHidden = $('logPanel').classList.contains('hidden');
     $('pasteModeBtn').click(); $('inputText').value='12.123.12.201/20\\n123.22.92.250/29'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
     out.afterInputVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
+    out.buttonWidths.clear = Math.round($('clearBtn').getBoundingClientRect().width);
     choosePolicy('single');
     out.afterPolicyVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
+    out.buttonWidths.run = Math.round($('runBtn').getBoundingClientRect().width);
     out.normalizedCidr = await run('12.123.12.201/20\\n123.22.92.250/29', { groupPolicy: 'single' });
+    out.buttonWidths.copy = Math.round($('copyBtn').getBoundingClientRect().width);
+    out.buttonWidths.download = Math.round($('downloadBtn').getBoundingClientRect().width);
+    $('traceInput').value = '12.123.0.5';
+    $('traceInput').dispatchEvent(new Event('input', { bubbles: true }));
+    out.buttonWidths.trace = Math.round($('traceBtn').getBoundingClientRect().width);
+    out.logScroll = { top: $('log').scrollTop, height: $('log').scrollHeight, client: $('log').clientHeight };
     out.single = await run('192.168.1.1,192.168.1.2\\n192.168.1.1', { groupPolicy: 'single' });
     out.cidr = await run('192.168.2.0/30\\n192.168.3.4/32\\n192.168.4.0/31', { groupPolicy: 'single' });
     out.tilde = await run('192.168.5.1~3\\nhttp://192.168.6.8:443', { groupPolicy: 'single' });
@@ -160,6 +174,12 @@ async function main() {
   assert.equal(results.hasGroupSelect, false);
   assert.equal(results.groupLabel, '범위 추가 선택');
   assert.deepEqual(results.groupOptions, ['범위 추가 선택 안함', '입력 구간만 확장', '대역 전체 추가']);
+  assert.ok(results.groupOptionTexts.every(x => /예:/.test(x)));
+  assert.ok(results.buttonWidths.clear >= results.buttonWidths.attach - 4);
+  assert.ok(results.buttonWidths.run >= results.buttonWidths.attach - 4);
+  assert.ok(Math.abs(results.buttonWidths.copy - results.buttonWidths.download) <= 4);
+  assert.ok(results.buttonWidths.trace >= results.buttonWidths.attach - 4);
+  assert.ok(results.logScroll.top + results.logScroll.client >= results.logScroll.height - 2);
   assert.deepEqual(results.afterDragVisible, ['inputPanel', 'rangePanel']);
   assert.match(results.afterDragText, /10\.10\.10\.2/);
   assert.equal(results.afterDragProgressHidden, true);
