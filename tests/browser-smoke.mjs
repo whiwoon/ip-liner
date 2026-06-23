@@ -90,6 +90,10 @@ async function main() {
     out.headerFontSize = getComputedStyle(document.querySelector('h1')).fontSize;
     out.initialVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.defaultAttach = $('attachMode').classList.contains('active') && $('attachModeBtn').classList.contains('active');
+    out.defaultDark = !document.body.classList.contains('light') && $('darkThemeBtn').classList.contains('active');
+    $('lightThemeBtn').click();
+    out.lightMode = document.body.classList.contains('light') && $('lightThemeBtn').classList.contains('active');
+    $('darkThemeBtn').click();
     out.hasDropZone = !!$('dropZone');
     out.rangeInitiallyHidden = $('rangePanel').classList.contains('hidden');
     out.hasTitlePill = !!document.querySelector('.pill');
@@ -137,6 +141,7 @@ async function main() {
     $('traceInput').dispatchEvent(new Event('input', { bubbles: true }));
     out.buttonWidths.trace = Math.round($('traceBtn').getBoundingClientRect().width);
     out.logScroll = { top: $('log').scrollTop, height: $('log').scrollHeight, client: $('log').clientHeight };
+    out.outputStyle = { maxHeight: getComputedStyle($('output')).maxHeight, marginBottom: getComputedStyle($('output')).marginBottom };
     let downloadName = '';
     const origCreate = URL.createObjectURL;
     URL.createObjectURL = () => 'blob:test';
@@ -187,11 +192,13 @@ async function main() {
 
   assert.equal(results.title, 'IP Liner');
   assert.equal(results.heading, 'IP Liner');
-  assert.match(results.desc, /단계/);
+  assert.match(results.desc, /필요한 범위/);
   assert.match(results.eyebrow, /IP 정리 도구/);
   assert.match(results.headerFontSize, /30px/);
   assert.deepEqual(results.initialVisible, ['inputPanel']);
   assert.equal(results.defaultAttach, true);
+  assert.equal(results.defaultDark, true);
+  assert.equal(results.lightMode, true);
   assert.equal(results.hasDropZone, true);
   assert.equal(results.rangeInitiallyHidden, true);
   assert.equal(results.hasTitlePill, false);
@@ -212,6 +219,8 @@ async function main() {
   assert.ok(Math.abs(results.buttonWidths.copy - results.buttonWidths.download) <= 4);
   assert.ok(results.buttonWidths.trace >= results.buttonWidths.attach - 4);
   assert.ok(results.logScroll.top + results.logScroll.client >= results.logScroll.height - 2);
+  assert.equal(results.outputStyle.maxHeight, '360px');
+  assert.equal(results.outputStyle.marginBottom, '12px');
   assert.match(results.downloadName, /^ip-liner-targets-\d{8}-\d{6}\.txt$/);
   assert.match(results.downloadStatus, /^다운로드 파일명: ip-liner-targets-\d{8}-\d{6}\.txt$/);
   assert.equal(results.copyStatus, '클립보드에 복사되었습니다.');

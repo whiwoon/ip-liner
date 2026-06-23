@@ -6,59 +6,70 @@
   <title>IP Liner</title>
   <style>
     :root{
-      --bg:#f4f1ea;--paper:#fffdf8;--panel:#fffaf0;--text:#1f2933;--muted:#6b7280;
-      --border:#d7cfc0;--accent:#2f6f73;--accent-2:#24585b;--ok:#2f7d32;
-      --warn:#9a6a00;--bad:#b42318;--input:#ffffff;--info:#2f6f73;--soft:#f0eadf;
+      --bg:#0f1115;--paper:#171a21;--text:#f3f4f6;--muted:#a4acb9;--border:#323744;
+      --accent:#4f8f8b;--accent-2:#3f7774;--ok:#65a96b;--warn:#d2a84a;--bad:#e06b62;
+      --input:#11141a;--pre-bg:#0c0f13;--pre-text:#f1f5f9;--tab:#11141a;--tab-active:#1f3433;
+      --drop:#151922;--drop-active:#1c2c2c;--secondary:#1f232d;--secondary-hover:#272c38;
+      --danger-bg:#2a1c1b;--danger-hover:#35211f;--danger-text:#ffb4ab;--focus:rgba(79,143,139,.22);
+    }
+    body.light{
+      --bg:#ffffff;--paper:#ffffff;--text:#1f2933;--muted:#667085;--border:#d6d9df;
+      --accent:#2f6f73;--accent-2:#24585b;--ok:#2f7d32;--warn:#946200;--bad:#b42318;
+      --input:#ffffff;--pre-bg:#222831;--pre-text:#f6f1e8;--tab:#ffffff;--tab-active:#e9f3f1;
+      --drop:#ffffff;--drop-active:#eef7f5;--secondary:#ffffff;--secondary-hover:#f4f6f8;
+      --danger-bg:#ffffff;--danger-hover:#fff1ee;--danger-text:#9f2d20;--focus:rgba(47,111,115,.14);
     }
     *{box-sizing:border-box}
     html,body{min-height:100%;margin:0;font-family:"Segoe UI",Apple SD Gothic Neo,Malgun Gothic,system-ui,sans-serif;background:var(--bg);color:var(--text)}
     body{overflow:auto}
     .app{width:min(920px,100%);margin:0 auto;min-height:100vh;display:flex;flex-direction:column;gap:16px;padding:24px 16px 40px}
-    .panel{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px;min-height:0;box-shadow:0 1px 2px rgba(36,32,25,.05)}
+    .panel{background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px;min-height:0;box-shadow:none}
     header.panel{padding:8px 2px 10px;background:transparent;border:0;box-shadow:none;text-align:left}
-    .eyebrow{display:block;margin:0 0 8px;color:#6f5e46;font-size:12px;font-weight:700;letter-spacing:.1px}
+    .topline{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+    .eyebrow{display:block;margin:0 0 8px;color:var(--muted);font-size:12px;font-weight:700;letter-spacing:.1px}
+    .theme-toggle{display:flex;gap:6px;flex:0 0 auto}
+    .theme-toggle button{padding:7px 10px;font-size:12px;background:transparent;border-color:var(--border);color:var(--muted)}
+    .theme-toggle button.active{background:var(--tab-active);border-color:var(--accent);color:var(--text)}
     h1{font-size:30px;margin:0 0 8px;letter-spacing:-.4px;font-weight:800}
-    .desc,.help{font-size:13px;color:var(--muted);line-height:1.55}
+    .desc,.help{font-size:13px;color:var(--muted);line-height:1.5}
     .flow{display:flex;flex-direction:column;gap:12px}
     .input-panel{display:flex;flex-direction:column;gap:14px}
     .mode-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .mode-tab{border:1px solid var(--border);background:#f8f4eb;color:var(--text);border-radius:8px;padding:12px;font-weight:700;cursor:pointer}
-    .mode-tab.active{border-color:var(--accent);background:#e5f0eb;color:#173f42}
+    .mode-tab{border:1px solid var(--border);background:var(--tab);color:var(--text);border-radius:8px;padding:12px;font-weight:700;cursor:pointer}
+    .mode-tab.active{border-color:var(--accent);background:var(--tab-active);color:var(--text)}
     .mode-body{display:none}.mode-body.active{display:block}
-    .drop-zone{border:1px dashed #9b8f7c;border-radius:10px;background:#fbf7ee;padding:34px 18px;text-align:left;transition:.12s border-color,.12s background}
-    .drop-zone.dragover{border-color:var(--accent);background:#edf6f2}
-    .drop-title{font-size:18px;font-weight:800;margin-bottom:6px}
-    .drop-sub{font-size:13px;color:var(--muted);margin-bottom:14px}
+    .drop-zone{border:1px dashed var(--border);border-radius:10px;background:var(--drop);padding:32px 18px;text-align:left;transition:.12s border-color,.12s background}
+    .drop-zone.dragover{border-color:var(--accent);background:var(--drop-active)}
+    .drop-title{font-size:18px;font-weight:800;margin-bottom:6px}.drop-sub{font-size:13px;color:var(--muted);margin-bottom:14px}
     input[type=file]{display:none}
-    label{display:block;margin:0 0 8px;font-size:13px;font-weight:700;color:#3a4652}
+    label{display:block;margin:0 0 8px;font-size:13px;font-weight:700;color:var(--text)}
     textarea,input[type=text]{width:100%;border:1px solid var(--border);background:var(--input);color:var(--text);border-radius:8px;padding:12px;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;outline:none}
-    textarea:focus,input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(47,111,115,.12)}
+    textarea:focus,input[type=text]:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--focus)}
     textarea{min-height:190px;resize:vertical}
     .btns{display:flex;gap:8px;flex-wrap:wrap}.btns.full{display:grid;grid-template-columns:1fr;gap:8px}.btns.split{display:grid;grid-template-columns:1fr 1fr;gap:8px}.btns.full button,.btns.split button{width:100%}
     button{border:1px solid transparent;border-radius:8px;background:var(--accent);color:white;padding:11px 14px;font-weight:750;cursor:pointer}
     button:hover{background:var(--accent-2)}button:disabled{opacity:.55;cursor:not-allowed}
-    button.secondary{background:#fff;border-color:var(--border);color:#26323c}button.secondary:hover{background:#f4efe6}
-    button.danger{background:#fff;border-color:#e6b8ad;color:#9f2d20}button.danger:hover{background:#fff1ee}
+    button.secondary{background:var(--secondary);border-color:var(--border);color:var(--text)}button.secondary:hover{background:var(--secondary-hover)}
+    button.danger{background:var(--danger-bg);border-color:var(--border);color:var(--danger-text)}button.danger:hover{background:var(--danger-hover)}
     .section-title{font-size:17px;font-weight:800;margin:0 0 8px;letter-spacing:-.1px}
     .range-options{display:grid;gap:8px;margin-top:12px}
-    .check-card{display:flex;align-items:flex-start;gap:10px;padding:13px;border:1px solid var(--border);border-radius:9px;background:#fffdf8;cursor:pointer;transition:.12s border-color,.12s background}
-    .check-card:hover{border-color:#9b8f7c;background:#fffaf0}
-    .check-card:has(input:checked){border-color:var(--accent);background:#edf6f2}
+    .check-card{display:flex;align-items:flex-start;gap:10px;padding:13px;border:1px solid var(--border);border-radius:9px;background:var(--paper);cursor:pointer;transition:.12s border-color,.12s background}
+    .check-card:hover{border-color:var(--accent);background:var(--drop)}.check-card:has(input:checked){border-color:var(--accent);background:var(--tab-active)}
     .check-card input{margin-top:3px}.check-card strong{display:block;margin-bottom:4px}.check-card span{font-size:13px;color:var(--muted);line-height:1.45}
     .progressWrap{display:grid;gap:8px}progress{width:100%;height:14px;accent-color:var(--accent)}
     .status,.stats{font-size:13px;color:var(--muted);line-height:1.45}.stats{margin:4px 0 10px}
-    pre{margin:0;background:#222831;color:#f6f1e8;border-radius:8px;padding:14px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    #log{max-height:280px}.log-line{display:block}.log-line.ok{color:#9fd49f}.log-line.warn{color:#ffd166}.log-line.bad{color:#ff9b8d}.log-line.info{color:#9ad3d0}
-    .trace{display:grid;grid-template-columns:1fr;gap:8px}.hidden{display:none!important}
-    .modal{position:fixed;inset:0;background:rgba(31,41,51,.42);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal.open{display:flex}
-    .dialog{width:min(760px,100%);max-height:86vh;overflow:auto;background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px;box-shadow:0 12px 32px rgba(36,32,25,.18)}
-    .confirmList{display:grid;gap:10px;margin:14px 0}.confirmRow{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;border:1px solid var(--border);border-radius:8px;padding:10px;background:#fffaf0}.confirmRow code{font-weight:700}.source,.reason{font-size:12px;color:var(--muted);margin-top:5px}
-    @media(max-width:640px){.app{padding:16px 10px 28px}h1{font-size:26px}.mode-tabs,.btns.split,.confirmRow{grid-template-columns:1fr}.drop-zone{text-align:left;padding:26px 14px}}
+    pre{margin:0;background:var(--pre-bg);color:var(--pre-text);border-radius:8px;padding:14px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    #output{max-height:360px;margin-bottom:12px}#log{max-height:280px}.log-line{display:block}.log-line.ok{color:#9fd49f}.log-line.warn{color:#ffd166}.log-line.bad{color:#ff9b8d}.log-line.info{color:#9ad3d0}
+    #outputActionStatus{margin-top:8px}.trace{display:grid;grid-template-columns:1fr;gap:8px}.hidden{display:none!important}
+    .modal{position:fixed;inset:0;background:rgba(0,0,0,.52);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal.open{display:flex}
+    .dialog{width:min(760px,100%);max-height:86vh;overflow:auto;background:var(--paper);border:1px solid var(--border);border-radius:10px;padding:18px;box-shadow:0 12px 32px rgba(0,0,0,.25)}
+    .confirmList{display:grid;gap:10px;margin:14px 0}.confirmRow{display:grid;grid-template-columns:1fr 1.2fr;gap:10px;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--drop)}.confirmRow code{font-weight:700}.source,.reason{font-size:12px;color:var(--muted);margin-top:5px}
+    @media(max-width:640px){.app{padding:16px 10px 28px}h1{font-size:26px}.mode-tabs,.btns.split,.confirmRow{grid-template-columns:1fr}.topline{display:block}.theme-toggle{margin-top:10px}.drop-zone{text-align:left;padding:26px 14px}}
 </style>
 </head>
 <body>
 <div class="app">
-  <header class="panel"><div class="eyebrow">브라우저 안에서 끝나는 IP 정리 도구</div><h1>IP Liner</h1><div class="desc">파일을 올리거나 IP 목록을 붙여넣으면 필요한 단계가 아래에 차례대로 열립니다. 모든 처리는 브라우저 안에서만 합니다.</div></header>
+  <header class="panel"><div class="topline"><div><div class="eyebrow">로컬 IP 정리 도구</div><h1>IP Liner</h1><div class="desc">파일을 올리거나 IP 목록을 붙여넣고, 필요한 범위만 선택해 정리합니다.</div></div><div class="theme-toggle" aria-label="테마 선택"><button id="darkThemeBtn" class="active" type="button">다크</button><button id="lightThemeBtn" type="button">화이트</button></div></div></header>
   <main class="flow">
     <section class="panel input-panel" id="inputPanel">
       <div class="mode-tabs" role="tablist" aria-label="입력 방식 선택">
@@ -67,12 +78,12 @@
       </div>
       <div id="attachMode" class="mode-body active">
         <div id="dropZone" class="drop-zone">
-          <div class="drop-title">파일을 첨부하거나 여기에 드래그앤드롭하세요</div>
-          <div class="drop-sub">TXT, CSV, LOG, XLSX, XLS 파일을 지원합니다.</div>
+          <div class="drop-title">파일 첨부 또는 드래그앤드롭</div>
+          <div class="drop-sub">TXT, CSV, LOG, XLSX, XLS 지원</div>
           <button id="pickFileBtn" type="button" class="secondary">파일 선택</button>
           <input id="fileInput" type="file" accept=".txt,.csv,.log,.xlsx,.xls,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" />
         </div>
-        <div id="excelStats" class="help">엑셀 파일을 올리면 전체 시트의 전체 셀에서 IP 후보를 찾고, 원본 시트/셀 위치를 추적합니다.</div>
+        <div id="excelStats" class="help">엑셀은 모든 시트에서 IP 후보를 찾습니다.</div>
       </div>
       <div id="pasteMode" class="mode-body">
         <label for="inputText">IP 목록 붙여넣기</label>
@@ -87,11 +98,11 @@
 
     <section class="panel range-panel hidden" id="rangePanel">
       <h2 class="section-title">범위 추가 선택</h2>
-      <div class="help">하나만 선택할 수 있습니다. 선택하면 실행 버튼이 아래에 나타납니다.</div>
+      <div class="help">하나만 선택하세요. 선택 후 실행 버튼이 나타납니다.</div>
       <div class="range-options" id="rangeOptions">
-        <label class="check-card"><input type="checkbox" name="groupPolicyCheck" value="single"><div><strong>범위 추가 선택 안함</strong><span>입력에서 나온 IP만 정리합니다. 예: 192.168.1.10, 192.168.1.20 → 두 IP만 출력</span></div></label>
-        <label class="check-card"><input type="checkbox" name="groupPolicyCheck" value="expand"><div><strong>입력 구간만 확장</strong><span>같은 /24 안의 최초·최종 IP 사이를 채웁니다. 예: 192.168.1.10, 192.168.1.20 → 192.168.1.10~20 출력</span></div></label>
-        <label class="check-card"><input type="checkbox" name="groupPolicyCheck" value="subnet"><div><strong>대역 전체 추가</strong><span>IP가 발견된 /24 전체를 포함합니다. 예: 192.168.1.10 → 192.168.1.0~255 출력</span></div></label>
+        <label class="check-card"><input type="checkbox" name="groupPolicyCheck" value="single"><div><strong>범위 추가 선택 안함</strong><span>입력 IP만 사용. 예: 192.168.1.10, 192.168.1.20 → 두 IP</span></div></label>
+        <label class="check-card"><input type="checkbox" name="groupPolicyCheck" value="expand"><div><strong>입력 구간만 확장</strong><span>같은 /24에서 처음~마지막 IP를 채움. 예: 192.168.1.10, .20 → .10~.20</span></div></label>
+        <label class="check-card"><input type="checkbox" name="groupPolicyCheck" value="subnet"><div><strong>대역 전체 추가</strong><span>해당 /24 전체 포함. 예: 192.168.1.10 → 192.168.1.0~255</span></div></label>
       </div>
     </section>
 
@@ -160,7 +171,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
 (() => {
   const $ = id => document.getElementById(id);
   const inputText=$('inputText'), fileInput=$('fileInput'), runBtn=$('runBtn'), copyBtn=$('copyBtn'), downloadBtn=$('downloadBtn'), clearBtn=$('clearBtn'), pickFileBtn=$('pickFileBtn');
-  const attachModeBtn=$('attachModeBtn'), pasteModeBtn=$('pasteModeBtn'), attachMode=$('attachMode'), pasteMode=$('pasteMode'), dropZone=$('dropZone'), inputActions=$('inputActions');
+  const attachModeBtn=$('attachModeBtn'), pasteModeBtn=$('pasteModeBtn'), darkThemeBtn=$('darkThemeBtn'), lightThemeBtn=$('lightThemeBtn'), attachMode=$('attachMode'), pasteMode=$('pasteMode'), dropZone=$('dropZone'), inputActions=$('inputActions');
   const rangePanel=$('rangePanel'), runPanel=$('runPanel'), progressPanel=$('progressPanel'), logPanel=$('logPanel'), outputPanel=$('outputPanel'), tracePanel=$('tracePanel'), traceResultPanel=$('traceResultPanel');
   const output=$('output'), outputActionStatus=$('outputActionStatus'), logEl=$('log'), stats=$('stats'), logStats=$('logStats'), progress=$('progress'), status=$('status'), excelStats=$('excelStats'), traceInput=$('traceInput'), traceBtn=$('traceBtn'), traceOutput=$('traceOutput');
   const confirmModal=$('confirmModal'), confirmList=$('confirmList'), applyConfirmBtn=$('applyConfirmBtn'), cancelConfirmBtn=$('cancelConfirmBtn');
@@ -178,6 +189,7 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
   const timestampForFile=()=>{const d=new Date(),pad=n=>String(n).padStart(2,'0');return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`};
   const outputFilename=()=>`ip-liner-targets-${timestampForFile()}.txt`;
   function setMode(mode){const attach=mode==='attach';attachModeBtn.classList.toggle('active',attach);pasteModeBtn.classList.toggle('active',!attach);attachModeBtn.setAttribute('aria-pressed',String(attach));pasteModeBtn.setAttribute('aria-pressed',String(!attach));attachMode.classList.toggle('active',attach);pasteMode.classList.toggle('active',!attach)}
+  function setTheme(theme){const light=theme==='light';document.body.classList.toggle('light',light);darkThemeBtn.classList.toggle('active',!light);lightThemeBtn.classList.toggle('active',light);darkThemeBtn.setAttribute('aria-pressed',String(!light));lightThemeBtn.setAttribute('aria-pressed',String(light))}
   function resetDownstream(){output.textContent='';outputActionStatus.textContent='';traceOutput.textContent='';lastOutput='';traceRanges=[];stats.textContent='결과 없음';progressPanel.classList.add('hidden');logPanel.classList.add('hidden');outputPanel.classList.add('hidden');tracePanel.classList.add('hidden');traceResultPanel.classList.add('hidden');traceBtn.classList.add('hidden')}
   async function handleFile(file){if(!file)return;logLines.length=0;resetDownstream();try{if(/\.(xlsx|xls)$/i.test(file.name))await loadExcel(file);else{activeRecords=null;activeText='';inputText.value=await file.text();excelStats.textContent=`텍스트 파일 로드: ${file.name}`;setProgress(0,`파일 로드: ${file.name}`)}fileInput.value='';updateFlow(rangePanel)}catch(err){console.error(err);setProgress(0,'파일 처리 실패');excelStats.textContent=`파일 처리 실패: ${err.message}`;addLog('bad',excelStats.textContent);renderLog();fileInput.value='';updateFlow(rangePanel)}}
   function isIPv4(s){const p=String(s).trim().split('.');if(p.length!==4)return false;return p.every(x=>/^\d+$/.test(x)&&Number(x)>=0&&Number(x)<=255&&String(Number(x))===x.replace(/^0+(?=\d)/,''))}
@@ -204,10 +216,10 @@ t.sheetStubs=true}if(t.type=="array"){t.type="binary";var a=xk(e,t);t.type="arra
   async function processWithOverrides(replacements){const text=inputText.value.trim();logLines.length=0;output.textContent='';traceOutput.textContent='';lastOutput='';traceRanges=[];progressPanel.classList.remove('hidden');logPanel.classList.remove('hidden');outputPanel.classList.add('hidden');tracePanel.classList.add('hidden');traceResultPanel.classList.add('hidden');scrollToPanel(progressPanel);renderLog();if(!text){setProgress(0,'입력 없음');addLog('bad','입력값이 없습니다.');renderLog();return}const groupPolicy=selectedGroupPolicy();if(!groupPolicy){setProgress(0,'범위 선택 필요');addLog('bad','범위 추가 선택을 먼저 선택하세요.');renderLog();updateFlow();return}runBtn.disabled=true;setProgress(1,'시작');const records=(activeRecords&&inputText.value===activeText)?activeRecords:recordsFromText(text);const ipNums=[],seen=new Set(),ipSources=new Map(),unresolved=[];const counters={total:records.length,duplicates:0,normalIps:0,invalid:0};addLog('info',`총 입력 건수: ${counters.total.toLocaleString()}개`);addLog('info',`적용 정책: 입력값 정리, 범위 추가=${groupPolicy}`);for(let i=0;i<records.length;i++){if(i%1000===0){setProgress(Math.min(45,5+Math.floor(i/records.length*40)),`입력값 정리 중 ${i}/${records.length}`);await sleepFrame()}handleInputValue(records[i],ipNums,seen,counters,ipSources,unresolved)}if(unresolved.length&&replacements==null){unresolved.forEach(x=>addLog('bad',`수동 입력 필요: ${x.value} (${x.reason}, ${sourceLabel(x.source)})`));renderLog();openManualInput(unresolved);runBtn.disabled=false;setProgress(0,'사용자 확인 대기');return}if(replacements!=null){const stillBad=[];unresolved.forEach((rec,i)=>parseManualReplacement(replacements[i]||'',rec,ipNums,seen,counters,ipSources,stillBad));if(stillBad.length){stillBad.forEach(x=>addLog('bad',`수동 입력 재확인 필요: ${x.value} (${x.reason}, ${sourceLabel(x.source)})`));renderLog();openManualInput(stillBad);runBtn.disabled=false;setProgress(0,'사용자 확인 대기');return}}
     setProgress(55,'중복 제거 및 정렬 중');await sleepFrame();const uniqueNums=[...new Set(ipNums)].sort((a,b)=>a-b);setProgress(70,'범위 추가 선택 적용 중');await sleepFrame();const grouped=groupIps(uniqueNums,groupPolicy,ipSources);traceRanges=grouped.map(g=>({...g,type:'ip'}));setProgress(90,'결과 생성 중');await sleepFrame();const result=grouped.map(g=>g.line);lastOutput=result.join('\n');output.textContent=lastOutput;outputPanel.classList.remove('hidden');tracePanel.classList.remove('hidden');scrollToPanel(outputPanel);stats.textContent=`입력값 정리 결과 · 유효 IP ${uniqueNums.length.toLocaleString()}개 · 최종 출력 IP ${result.length.toLocaleString()}개 · 수동 확인 ${unresolved.length.toLocaleString()}개 · 제외/오류 ${counters.invalid.toLocaleString()}개 · 중복 ${counters.duplicates.toLocaleString()}개`;addLog('info',`중복 제거 건수: ${counters.duplicates.toLocaleString()}개`);addLog('info',`유효 IP 수: ${uniqueNums.length.toLocaleString()}개`);addLog('info',`최종 출력 IP 수: ${result.length.toLocaleString()}개`);addLog('info',`수동 확인 필요 항목: ${unresolved.length.toLocaleString()}개`);addLog('ok','처리 완료');renderLog();setProgress(100,'완료');runBtn.disabled=false}
   function traceIp(ip){traceResultPanel.classList.remove('hidden');scrollToPanel(traceResultPanel);if(!isIPv4(ip)){traceOutput.textContent='올바른 단일 IPv4를 입력하세요.';return}const n=ipToNum(ip);const hits=traceRanges.filter(r=>n>=r.start&&n<=r.end);if(!hits.length){traceOutput.textContent=`${ip}: 현재 정리 결과에 포함되지 않습니다.`;return}traceOutput.textContent=hits.map((h,i)=>{const direct=(h.exactNums||[]).includes(n);const kind=h.kind==='expand'?'입력 구간만 확장':h.kind==='subnet'?'대역 전체 추가':'범위 추가 선택 안함';const lines=[`${i+1}. ${ip}는 결과에 포함됩니다.`,`생성 방식: ${kind}`,`직접 추출 IP 여부: ${direct?'예':'아니오, 범위 추가 선택으로 포함됨'}`,`이 IP를 만든 원본 위치:`];lines.push(...uniqueSourceDetails(h.sources).map(x=>`- ${x.replace(/\n/g,'\n  ')}`));if(h.kind==='expand'&&!direct)lines.push('참고: 입력 구간만 확장은 최초·최종 IP 사이의 누락 IP도 스캔 대상에 포함할 수 있습니다.');if(h.kind==='subnet'&&!direct)lines.push('참고: 대역 전체 추가는 IP가 하나라도 있는 /24 전체를 포함합니다.');return lines.join('\n')}).join('\n\n')}
-  attachModeBtn.addEventListener('click',()=>setMode('attach'));pasteModeBtn.addEventListener('click',()=>setMode('paste'));pickFileBtn.addEventListener('click',()=>{fileInput.value='';fileInput.click()});fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
+  attachModeBtn.addEventListener('click',()=>setMode('attach'));pasteModeBtn.addEventListener('click',()=>setMode('paste'));darkThemeBtn.addEventListener('click',()=>setTheme('dark'));lightThemeBtn.addEventListener('click',()=>setTheme('light'));pickFileBtn.addEventListener('click',()=>{fileInput.value='';fileInput.click()});fileInput.addEventListener('change',e=>handleFile(e.target.files[0]));
   ['dragenter','dragover'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('dragover')}));['dragleave','drop'].forEach(ev=>dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.remove('dragover')}));dropZone.addEventListener('drop',e=>handleFile(e.dataTransfer.files[0]));
   inputText.addEventListener('input',()=>{activeRecords=null;activeText='';resetDownstream();updateFlow(rangePanel)});document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb=>cb.addEventListener('change',()=>{if(cb.checked)document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(other=>{if(other!==cb)other.checked=false});resetDownstream();updateFlow(cb.checked?runPanel:null)}));
-  runBtn.addEventListener('click',()=>processWithOverrides(null));applyConfirmBtn.addEventListener('click',()=>{const replacements=[...confirmList.querySelectorAll('textarea')].map(t=>t.value);confirmModal.classList.remove('open');processWithOverrides(replacements)});cancelConfirmBtn.addEventListener('click',()=>confirmModal.classList.remove('open'));traceInput.addEventListener('input',()=>{traceBtn.classList.toggle('hidden',!traceInput.value.trim());if(traceInput.value.trim())scrollToPanel(tracePanel)});traceBtn.addEventListener('click',()=>traceIp(traceInput.value.trim()));copyBtn.addEventListener('click',async()=>{if(!lastOutput)return alert('복사할 결과가 없습니다.');await navigator.clipboard.writeText(lastOutput);outputActionStatus.textContent='클립보드에 복사되었습니다.';setProgress(progress.value,'결과 복사 완료')});downloadBtn.addEventListener('click',()=>{if(!lastOutput)return alert('다운로드할 결과가 없습니다.');const filename=outputFilename();const blob=new Blob([lastOutput+'\n'],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);outputActionStatus.textContent=`다운로드 파일명: ${filename}`});clearBtn.addEventListener('click',()=>{inputText.value='';fileInput.value='';output.textContent='';outputActionStatus.textContent='';traceOutput.textContent='';logEl.textContent='';lastOutput='';activeRecords=null;activeText='';traceRanges=[];stats.textContent='결과 없음';logStats.textContent='로그 없음';excelStats.textContent='엑셀 파일을 올리면 전체 시트의 전체 셀에서 IP 후보를 찾고, 원본 시트/셀 위치를 추적합니다.';document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb=>cb.checked=false);setProgress(0,'대기 중');updateFlow();scrollToPanel(inputPanel)});updateFlow();
+  runBtn.addEventListener('click',()=>processWithOverrides(null));applyConfirmBtn.addEventListener('click',()=>{const replacements=[...confirmList.querySelectorAll('textarea')].map(t=>t.value);confirmModal.classList.remove('open');processWithOverrides(replacements)});cancelConfirmBtn.addEventListener('click',()=>confirmModal.classList.remove('open'));traceInput.addEventListener('input',()=>{traceBtn.classList.toggle('hidden',!traceInput.value.trim());if(traceInput.value.trim())scrollToPanel(tracePanel)});traceBtn.addEventListener('click',()=>traceIp(traceInput.value.trim()));copyBtn.addEventListener('click',async()=>{if(!lastOutput)return alert('복사할 결과가 없습니다.');await navigator.clipboard.writeText(lastOutput);outputActionStatus.textContent='클립보드에 복사되었습니다.';setProgress(progress.value,'결과 복사 완료')});downloadBtn.addEventListener('click',()=>{if(!lastOutput)return alert('다운로드할 결과가 없습니다.');const filename=outputFilename();const blob=new Blob([lastOutput+'\n'],{type:'text/plain;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;a.click();URL.revokeObjectURL(url);outputActionStatus.textContent=`다운로드 파일명: ${filename}`});clearBtn.addEventListener('click',()=>{inputText.value='';fileInput.value='';output.textContent='';outputActionStatus.textContent='';traceOutput.textContent='';logEl.textContent='';lastOutput='';activeRecords=null;activeText='';traceRanges=[];stats.textContent='결과 없음';logStats.textContent='로그 없음';excelStats.textContent='엑셀은 모든 시트에서 IP 후보를 찾습니다.';document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb=>cb.checked=false);setProgress(0,'대기 중');updateFlow();scrollToPanel(inputPanel)});updateFlow();
   window.__ipLinerTest={processWithOverrides,getLastOutput:()=>lastOutput,getTrace:()=>traceOutput.textContent,traceIp,loadExcel,extractCandidates,parseIpToken};
 })();
 </script>
