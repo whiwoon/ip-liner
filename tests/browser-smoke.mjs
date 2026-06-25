@@ -68,10 +68,14 @@ async function main() {
     function choosePolicy(v) {
       document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb => { cb.checked = cb.value === v; cb.dispatchEvent(new Event('change', { bubbles: true })); });
     }
+    function choosePublicPolicy(v) {
+      document.querySelectorAll('input[name="publicPolicy"]').forEach(cb => { cb.checked = cb.value === v; if (cb.checked) cb.dispatchEvent(new Event('change', { bubbles: true })); });
+    }
     async function run(input, opts = {}, replacements = null) {
       $('pasteModeBtn').click();
       $('inputText').value = input;
       $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
+      if (!$('scopePanel').classList.contains('hidden')) choosePublicPolicy(opts.publicPolicy || 'internal');
       choosePolicy(opts.groupPolicy || 'single');
       const t0 = performance.now();
       if (replacements) await window.__ipLinerTest.processWithOverrides([...replacements]); else $('runBtn').click();
@@ -98,7 +102,7 @@ async function main() {
     out.rangeInitiallyHidden = $('rangePanel').classList.contains('hidden');
     out.hasTitlePill = !!document.querySelector('.pill');
     out.flowOrder = [...document.querySelectorAll('main > section')].map(x => x.id);
-    out.panelBorders = [...document.querySelectorAll('.input-panel,.range-panel,.run-panel,.progress-panel,.log-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
+    out.panelBorders = [...document.querySelectorAll('.input-panel,.scope-panel,.range-panel,.run-panel,.progress-panel,.log-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
     out.traceHeading = document.querySelector('.trace-panel h2').textContent;
     out.progressHeading = document.querySelector('.progress-panel h2').textContent;
     out.logHeading = document.querySelector('.log-panel h2').textContent;
@@ -106,9 +110,12 @@ async function main() {
     out.hasRangeFormat = !!$('rangeFormat');
     out.hasPreviewLimit = !!$('previewLimit');
     out.hasGroupSelect = !!$('groupPolicy');
+    out.scopeInitiallyHidden = $('scopePanel').classList.contains('hidden');
+    out.scopeLabel = document.querySelector('.scope-panel .section-title').textContent;
+    out.publicPolicyOptions = [...document.querySelectorAll('input[name="publicPolicy"]')].map(o => o.value);
     out.groupLabel = document.querySelector('.range-panel .section-title').textContent;
-    out.groupOptions = [...document.querySelectorAll('.check-card strong')].map(o => o.textContent);
-    out.groupOptionTexts = [...document.querySelectorAll('.check-card span')].map(o => o.textContent);
+    out.groupOptions = [...document.querySelectorAll('.range-panel .check-card strong')].map(o => o.textContent);
+    out.groupOptionTexts = [...document.querySelectorAll('.range-panel .check-card span')].map(o => o.textContent);
     out.buttonWidths = {
       attach: Math.round($('attachModeBtn').getBoundingClientRect().width),
       paste: Math.round($('pasteModeBtn').getBoundingClientRect().width),
@@ -130,7 +137,10 @@ async function main() {
     out.afterClearDropVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     $('pasteModeBtn').click(); $('inputText').value='12.123.12.201/20\\n123.22.92.250/29'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
     out.afterInputVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
+    out.scopeSummary = $('scopeSummary').textContent;
     out.buttonWidths.clear = Math.round($('clearBtn').getBoundingClientRect().width);
+    choosePublicPolicy('internal');
+    out.afterPublicPolicyVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     choosePolicy('single');
     out.afterPolicyVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.buttonWidths.run = Math.round($('runBtn').getBoundingClientRect().width);
@@ -167,6 +177,11 @@ async function main() {
     out.tilde = await run('192.168.5.1~3\\nhttp://192.168.6.8:443', { groupPolicy: 'single' });
     out.expand = await run('192.168.1.3\\n192.168.1.23\\n192.168.1.233', { groupPolicy: 'expand' });
     out.subnet = await run('192.168.7.44', { groupPolicy: 'subnet' });
+    out.publicSingle = await run('203.0.113.10\\n203.0.113.20\\n192.168.8.44', { groupPolicy: 'subnet', publicPolicy: 'single' });
+    out.publicExclude = await run('203.0.113.10\\n203.0.113.20\\n192.168.8.44', { groupPolicy: 'subnet', publicPolicy: 'exclude' });
+    $('pasteModeBtn').click(); $('inputText').value='100.64.4.10'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
+    $('customInternalInput').value='100.64.0.0/10'; $('customInternalInput').dispatchEvent(new Event('input', { bubbles: true }));
+    out.customInternalVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.manualWait = await run('192.168.0.999\\nabc', { groupPolicy: 'single' });
     out.manualRows = [...document.querySelectorAll('.confirmRow code')].map(x => x.textContent);
     out.manualReasons = [...document.querySelectorAll('.confirmRow .reason')].map(x => x.textContent).join('\\n');
@@ -202,8 +217,8 @@ async function main() {
   assert.equal(results.hasDropZone, true);
   assert.equal(results.rangeInitiallyHidden, true);
   assert.equal(results.hasTitlePill, false);
-  assert.deepEqual(results.flowOrder, ['inputPanel', 'rangePanel', 'runPanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
-  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px']);
+  assert.deepEqual(results.flowOrder, ['inputPanel', 'scopePanel', 'rangePanel', 'runPanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
+  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px']);
   assert.equal(results.traceHeading, '역추적');
   assert.equal(results.progressHeading, '진행률');
   assert.equal(results.logHeading, '처리 로그');
@@ -211,6 +226,9 @@ async function main() {
   assert.equal(results.hasRangeFormat, false);
   assert.equal(results.hasPreviewLimit, false);
   assert.equal(results.hasGroupSelect, false);
+  assert.equal(results.scopeInitiallyHidden, true);
+  assert.equal(results.scopeLabel, '공인/비표준 대역 확인');
+  assert.deepEqual(results.publicPolicyOptions, ['internal', 'single', 'exclude']);
   assert.equal(results.groupLabel, '범위 추가 선택');
   assert.deepEqual(results.groupOptions, ['범위 추가 선택 안함', '입력 구간만 확장', '대역 전체 추가']);
   assert.ok(results.groupOptionTexts.every(x => /예:/.test(x)));
@@ -235,8 +253,10 @@ async function main() {
   assert.equal(results.afterDragLogHidden, true);
   assert.match(results.afterClearDropText, /10\.10\.10\.2/);
   assert.deepEqual(results.afterClearDropVisible, ['inputPanel', 'rangePanel']);
-  assert.deepEqual(results.afterInputVisible, ['inputPanel', 'rangePanel']);
-  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'rangePanel', 'runPanel']);
+  assert.deepEqual(results.afterInputVisible, ['inputPanel', 'scopePanel']);
+  assert.match(results.scopeSummary, /기본 사설 IP 대역이 아닌 주소/);
+  assert.deepEqual(results.afterPublicPolicyVisible, ['inputPanel', 'scopePanel', 'rangePanel']);
+  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel', 'rangePanel', 'runPanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
   assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);
   assert.match(results.normalizedCidr.output, /123\.22\.92\.249/);
@@ -250,6 +270,15 @@ async function main() {
   assert.equal(results.subnet.output.split('\n').length, 256);
   assert.match(results.subnet.output, /^192\.168\.7\.0\n/);
   assert.match(results.subnet.output, /\n192\.168\.7\.255$/);
+  assert.equal(results.publicSingle.output.split('\n').length, 258);
+  assert.match(results.publicSingle.output, /^192\.168\.8\.0\n/);
+  assert.match(results.publicSingle.output, /203\.0\.113\.10/);
+  assert.match(results.publicSingle.output, /203\.0\.113\.20/);
+  assert.match(results.publicSingle.log, /입력값만 유지/);
+  assert.equal(results.publicExclude.output.split('\n').length, 256);
+  assert.doesNotMatch(results.publicExclude.output, /203\.0\.113/);
+  assert.match(results.publicExclude.log, /IP 제외/);
+  assert.deepEqual(results.customInternalVisible, ['inputPanel', 'rangePanel', 'runPanel']);
   assert.equal(results.manualWait.status, '사용자 확인 대기');
   assert.deepEqual(results.manualRows, ['192.168.0.999', 'abc']);
   assert.match(results.manualReasons, /잘못된 IP/);
