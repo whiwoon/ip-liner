@@ -75,12 +75,16 @@ async function main() {
       const cb = [...document.querySelectorAll('input[name="scopeItemCheck"]')].find(x => x.value === value);
       if (cb) { cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); }
     }
+    function selectAllScopes() {
+      document.querySelectorAll('input[name="scopeItemCheck"]').forEach(cb => { cb.checked = true; });
+    }
     async function run(input, opts = {}, replacements = null) {
       $('pasteModeBtn').click();
       $('inputText').value = input;
       $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
       if (opts.manualScope != null) { $('customInternalInput').value = opts.manualScope; $('customInternalInput').dispatchEvent(new Event('input', { bubbles: true })); }
-      if (opts.scopeMode) chooseScopeMode(opts.scopeMode);
+      if (!opts.noAutoScope) selectAllScopes();
+      if (!opts.noAutoScope || opts.scopeMode) chooseScopeMode(opts.scopeMode || 'both');
       (opts.uncheckScopes || []).forEach(uncheckScope);
       choosePolicy(opts.groupPolicy || 'single');
       const t0 = performance.now();
@@ -119,6 +123,10 @@ async function main() {
     out.scopeInitiallyHidden = $('scopePanel').classList.contains('hidden');
     out.scopeLabel = document.querySelector('.scope-panel .section-title').textContent;
     out.scopeModeOptions = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.value);
+    out.initialScopeModes = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.checked);
+    const no = document.querySelector('.step-no');
+    const noStyle = getComputedStyle(no);
+    out.stepNoStyle = { display: noStyle.display, alignItems: noStyle.alignItems, justifyContent: noStyle.justifyContent, width: noStyle.width, height: noStyle.height, lineHeight: noStyle.lineHeight };
     out.groupLabel = document.querySelector('.range-panel .section-title').textContent;
     out.groupOptions = [...document.querySelectorAll('.range-panel .check-card strong')].map(o => o.textContent);
     out.groupOptionTexts = [...document.querySelectorAll('.range-panel .check-card span')].map(o => o.textContent);
@@ -146,6 +154,9 @@ async function main() {
     out.scopeSummary = $('scopeSummary').textContent;
     out.buttonWidths.clear = Math.round($('clearBtn').getBoundingClientRect().width);
     out.scopeChecks = [...document.querySelectorAll('input[name="scopeItemCheck"]')].map(x => ({ value: x.value, checked: x.checked }));
+    out.scopeModesAfterInput = [...document.querySelectorAll('input[name="scopeMode"]')].map(x => x.checked);
+    selectAllScopes();
+    chooseScopeMode('both');
     choosePolicy('single');
     out.afterPolicyVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.buttonWidths.run = Math.round($('runBtn').getBoundingClientRect().width);
@@ -183,7 +194,7 @@ async function main() {
     out.expand = await run('192.168.1.3\\n192.168.1.23\\n192.168.1.233', { groupPolicy: 'expand' });
     out.subnet = await run('192.168.7.44', { groupPolicy: 'subnet' });
     out.scopeUncheck = await run('203.0.113.10\\n203.0.113.20\\n192.168.8.44', { groupPolicy: 'subnet', uncheckScopes: ['203.0.113.0/24'] });
-    out.maskExcluded = await run('255.255.255.0\\n255.255.255.30', { groupPolicy: 'subnet' });
+    out.maskExcluded = await run('255.255.255.0\\n255.255.255.30', { groupPolicy: 'subnet', noAutoScope: true });
     $('pasteModeBtn').click(); $('inputText').value='100.64.4.10'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
     $('customInternalInput').value='100.64.0.0/10\\n12.123.0.0/16'; $('customInternalInput').dispatchEvent(new Event('input', { bubbles: true }));
     out.customInternalVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
@@ -196,6 +207,9 @@ async function main() {
     await window.__ipLinerTest.loadExcel(file);
     out.excelStats = $('excelStats').textContent;
     out.excelText = $('inputText').value;
+    window.__ipLinerTest.analyzeInputScopes();
+    selectAllScopes();
+    chooseScopeMode('both');
     choosePolicy('expand');
     await window.__ipLinerTest.processWithOverrides(Array(20).fill(''));
     out.excelOutput = window.__ipLinerTest.getLastOutput();
@@ -232,6 +246,10 @@ async function main() {
   assert.equal(results.scopeInitiallyHidden, true);
   assert.equal(results.scopeLabel, '입력값 IP 대역 확인');
   assert.deepEqual(results.scopeModeOptions, ['checked', 'manual', 'both']);
+  assert.deepEqual(results.initialScopeModes, [false, false, false]);
+  assert.equal(results.stepNoStyle.display, 'flex');
+  assert.equal(results.stepNoStyle.alignItems, 'center');
+  assert.equal(results.stepNoStyle.justifyContent, 'center');
   assert.equal(results.groupLabel, '범위 확장');
   assert.deepEqual(results.groupOptions, ['범위 확장 안함', '입력 구간만 확장', '대역 전체 추가']);
   assert.ok(results.groupOptionTexts.every(x => /예:/.test(x)));
@@ -254,10 +272,12 @@ async function main() {
   assert.equal(results.afterDragLogHidden, true);
   assert.match(results.afterClearDropText, /10\.10\.10\.2/);
   assert.deepEqual(results.afterClearDropVisible, ['inputPanel', 'scopePanel']);
-  assert.deepEqual(results.afterInputVisible, ['inputPanel', 'scopePanel', 'rangePanel']);
+  assert.deepEqual(results.afterInputVisible, ['inputPanel', 'scopePanel']);
   assert.match(results.scopeSummary, /스캔 대상 후보/);
   assert.equal(results.scopeSummary.includes('감지값'), false);
-  assert.ok(results.scopeChecks.some(x => x.value === '12.123.0.0/20' && x.checked));
+  assert.ok(results.scopeChecks.some(x => x.value === '12.123.0.0/20' && !x.checked));
+  assert.ok(results.scopeChecks.every(x => !x.checked));
+  assert.deepEqual(results.scopeModesAfterInput, [false, false, false]);
   assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel', 'rangePanel', 'runPanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
   assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);
