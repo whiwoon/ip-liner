@@ -95,7 +95,7 @@ async function main() {
       (opts.uncheckScopes || []).forEach(uncheckScope);
       choosePolicy(opts.groupPolicy || 'single');
       const t0 = performance.now();
-      if (replacements) await window.__ipLinerTest.processWithOverrides([...replacements]); else $('runBtn').click();
+      if (replacements || opts.noAutoScope) await window.__ipLinerTest.processWithOverrides(replacements ? [...replacements] : null); else $('runBtn').click();
       const start = performance.now();
       while (!['완료','사용자 확인 대기','스캔 대상 없음'].includes($('status').textContent)) {
         if (performance.now() - start > 90000) throw new Error('run timeout: ' + $('status').textContent);
@@ -120,7 +120,7 @@ async function main() {
     out.rangeInitiallyHidden = !$('rangePanel') || $('rangePanel').classList.contains('hidden');
     out.hasTitlePill = !!document.querySelector('.pill');
     out.flowOrder = [...document.querySelectorAll('main > section')].map(x => x.id);
-    out.panelBorders = [...document.querySelectorAll('.input-panel,.scope-panel,.run-panel,.progress-panel,.log-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
+    out.panelBorders = [...document.querySelectorAll('.input-panel,.scope-panel,.progress-panel,.log-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
     out.traceHeading = document.querySelector('.trace-panel h2').textContent;
     out.progressHeading = document.querySelector('.progress-panel h2').textContent;
     out.logHeading = document.querySelector('.log-panel h2').textContent;
@@ -133,6 +133,8 @@ async function main() {
     out.scopeModeOptions = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.value);
     out.initialScopeModes = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.checked);
     out.bulkPolicyButtons = [...document.querySelectorAll('[data-bulk-policy]')].map(o => o.dataset.bulkPolicy);
+    out.bulkPolicyButtonTexts = [...document.querySelectorAll('[data-bulk-policy]')].map(o => o.textContent);
+    out.runButtonText = $('runBtn').textContent;
     const no = document.querySelector('.step-no');
     const noStyle = getComputedStyle(no);
     out.stepNoStyle = { display: noStyle.display, alignItems: noStyle.alignItems, justifyContent: noStyle.justifyContent, width: noStyle.width, height: noStyle.height, lineHeight: noStyle.lineHeight };
@@ -249,8 +251,8 @@ async function main() {
   assert.equal(results.hasRangePanel, false);
   assert.equal(results.rangeInitiallyHidden, true);
   assert.equal(results.hasTitlePill, false);
-  assert.deepEqual(results.flowOrder, ['inputPanel', 'scopePanel', 'runPanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
-  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px']);
+  assert.deepEqual(results.flowOrder, ['inputPanel', 'scopePanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
+  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px']);
   assert.equal(results.traceHeading, '역추적');
   assert.equal(results.progressHeading, '결과 / 로그 확인');
   assert.equal(results.logHeading, '처리 로그');
@@ -259,10 +261,12 @@ async function main() {
   assert.equal(results.hasPreviewLimit, false);
   assert.equal(results.hasGroupSelect, false);
   assert.equal(results.scopeInitiallyHidden, true);
-  assert.equal(results.scopeLabel, '입력값 IP 대역 확인');
+  assert.equal(results.scopeLabel, '정리 방식 선택');
   assert.deepEqual(results.scopeModeOptions, []);
   assert.deepEqual(results.initialScopeModes, []);
   assert.deepEqual(results.bulkPolicyButtons, ['single', 'expand', 'subnet']);
+  assert.deepEqual(results.bulkPolicyButtonTexts, ['범위 확장 안함', '입력구간 확장', '대역 전체 추가']);
+  assert.equal(results.runButtonText, '정리 시작');
   assert.equal(results.stepNoStyle.display, 'flex');
   assert.equal(results.stepNoStyle.alignItems, 'center');
   assert.equal(results.stepNoStyle.justifyContent, 'center');
@@ -291,10 +295,10 @@ async function main() {
   assert.deepEqual(results.afterInputVisible, ['inputPanel', 'scopePanel']);
   assert.match(results.scopeSummary, /스캔 대상 후보/);
   assert.equal(results.scopeSummary.includes('감지값'), false);
-  assert.ok(results.scopeChecks.some(x => x.value === '12.123.0.0/20' && !x.checked));
-  assert.ok(results.scopeChecks.every(x => !x.checked));
-  assert.ok(results.scopePoliciesAfterInput.every(x => x.value === '' && x.disabled));
-  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel', 'runPanel']);
+  assert.ok(results.scopeChecks.some(x => x.value === '12.123.0.0/20' && x.checked));
+  assert.ok(results.scopeChecks.every(x => x.checked));
+  assert.ok(results.scopePoliciesAfterInput.every(x => x.value === 'single' && !x.disabled));
+  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
   assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);
   assert.match(results.normalizedCidr.output, /123\.22\.92\.249/);
@@ -323,7 +327,7 @@ async function main() {
   assert.match(results.invalidExcluded.log, /자동 제외: 192\.168\.0\.999/);
   assert.match(results.mixedPolicy.output, /^10\.0\.1\.1\n10\.0\.1\.2\n10\.0\.1\.3\n10\.0\.2\.0\n/);
   assert.match(results.mixedPolicy.output, /\n10\.0\.2\.255$/);
-  assert.match(results.mixedPolicy.log, /10\.0\.1\.0\/24: 입력 구간만 확장 적용/);
+  assert.match(results.mixedPolicy.log, /10\.0\.1\.0\/24: 입력구간 확장 적용/);
   assert.match(results.mixedPolicy.log, /10\.0\.2\.0\/24: 대역 전체 추가 적용/);
   assert.ok(results.logClasses.some(x => x.includes('warn')));
   assert.ok(results.logClasses.some(x => x.includes('ok')));
