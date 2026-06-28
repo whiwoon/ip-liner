@@ -66,14 +66,21 @@ async function main() {
     const originalScrollIntoView = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = function(opts) { window.__scrollCalls.push({ id: this.id, opts }); };
     function choosePolicy(v) {
-      document.querySelectorAll('input[name="groupPolicyCheck"]').forEach(cb => { cb.checked = cb.value === v; cb.dispatchEvent(new Event('change', { bubbles: true })); });
+      document.querySelectorAll('input[name="scopeItemCheck"]:checked').forEach(cb => {
+        const sel = document.querySelector('select[name="scopePolicy"][data-scope-key="' + CSS.escape(cb.value) + '"]');
+        if (sel) { sel.disabled = false; sel.value = v; sel.dispatchEvent(new Event('change', { bubbles: true })); }
+      });
     }
-    function chooseScopeMode(v) {
-      document.querySelectorAll('input[name="scopeMode"]').forEach(cb => { cb.checked = cb.value === v; if (cb.checked) cb.dispatchEvent(new Event('change', { bubbles: true })); });
-    }
+    function chooseScopeMode(v) { /* kept for older test call sites; per-scope policies now drive execution */ }
     function uncheckScope(value) {
       const cb = [...document.querySelectorAll('input[name="scopeItemCheck"]')].find(x => x.value === value);
       if (cb) { cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+    }
+    function setScopePolicy(value, policy) {
+      const cb = [...document.querySelectorAll('input[name="scopeItemCheck"]')].find(x => x.value === value);
+      if (cb) cb.checked = true;
+      const sel = document.querySelector('select[name="scopePolicy"][data-scope-key="' + CSS.escape(value) + '"]');
+      if (sel) { sel.disabled = false; sel.value = policy; sel.dispatchEvent(new Event('change', { bubbles: true })); }
     }
     function selectAllScopes() {
       document.querySelectorAll('input[name="scopeItemCheck"]').forEach(cb => { cb.checked = true; });
@@ -109,10 +116,11 @@ async function main() {
     out.lightMode = document.body.classList.contains('light') && $('lightThemeBtn').classList.contains('active');
     $('darkThemeBtn').click();
     out.hasDropZone = !!$('dropZone');
-    out.rangeInitiallyHidden = $('rangePanel').classList.contains('hidden');
+    out.hasRangePanel = !!$('rangePanel');
+    out.rangeInitiallyHidden = !$('rangePanel') || $('rangePanel').classList.contains('hidden');
     out.hasTitlePill = !!document.querySelector('.pill');
     out.flowOrder = [...document.querySelectorAll('main > section')].map(x => x.id);
-    out.panelBorders = [...document.querySelectorAll('.input-panel,.scope-panel,.range-panel,.run-panel,.progress-panel,.log-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
+    out.panelBorders = [...document.querySelectorAll('.input-panel,.scope-panel,.run-panel,.progress-panel,.log-panel,.output-panel,.trace-panel,.trace-result-panel')].map(x => getComputedStyle(x).borderTopWidth);
     out.traceHeading = document.querySelector('.trace-panel h2').textContent;
     out.progressHeading = document.querySelector('.progress-panel h2').textContent;
     out.logHeading = document.querySelector('.log-panel h2').textContent;
@@ -124,10 +132,11 @@ async function main() {
     out.scopeLabel = document.querySelector('.scope-panel .section-title').textContent;
     out.scopeModeOptions = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.value);
     out.initialScopeModes = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.checked);
+    out.bulkPolicyButtons = [...document.querySelectorAll('[data-bulk-policy]')].map(o => o.dataset.bulkPolicy);
     const no = document.querySelector('.step-no');
     const noStyle = getComputedStyle(no);
     out.stepNoStyle = { display: noStyle.display, alignItems: noStyle.alignItems, justifyContent: noStyle.justifyContent, width: noStyle.width, height: noStyle.height, lineHeight: noStyle.lineHeight };
-    out.groupLabel = document.querySelector('.range-panel .section-title').textContent;
+    out.groupLabel = document.querySelector('.range-panel .section-title')?.textContent || '';
     out.groupOptions = [...document.querySelectorAll('.range-panel .check-card strong')].map(o => o.textContent);
     out.groupOptionTexts = [...document.querySelectorAll('.range-panel .check-card span')].map(o => o.textContent);
     out.buttonWidths = {
@@ -154,7 +163,7 @@ async function main() {
     out.scopeSummary = $('scopeSummary').textContent;
     out.buttonWidths.clear = Math.round($('clearBtn').getBoundingClientRect().width);
     out.scopeChecks = [...document.querySelectorAll('input[name="scopeItemCheck"]')].map(x => ({ value: x.value, checked: x.checked }));
-    out.scopeModesAfterInput = [...document.querySelectorAll('input[name="scopeMode"]')].map(x => x.checked);
+    out.scopePoliciesAfterInput = [...document.querySelectorAll('select[name="scopePolicy"]')].map(x => ({ value: x.value, disabled: x.disabled }));
     selectAllScopes();
     chooseScopeMode('both');
     choosePolicy('single');
@@ -200,6 +209,11 @@ async function main() {
     out.customInternalVisible = [...document.querySelectorAll('main > section:not(.hidden)')].map(x => x.id);
     out.preInfoAllowed = await run('12.123.12.201/20', { groupPolicy: 'subnet', manualScope: '100.64.0.0/10\\n12.123.0.0/16', scopeMode: 'both' });
     out.invalidExcluded = await run('192.168.0.999\\nabc\\n192.168.0.5', { groupPolicy: 'single' });
+    $('pasteModeBtn').click(); $('inputText').value='10.0.1.1\\n10.0.1.3\\n10.0.2.4'; $('inputText').dispatchEvent(new Event('input', { bubbles: true }));
+    setScopePolicy('10.0.1.0/24', 'expand');
+    setScopePolicy('10.0.2.0/24', 'subnet');
+    await window.__ipLinerTest.processWithOverrides(null);
+    out.mixedPolicy = { output: window.__ipLinerTest.getLastOutput(), log: $('log').textContent };
     out.logClasses = [...document.querySelectorAll('#log .log-line')].map(x => x.className);
     out.sample = await run(${JSON.stringify(sample)}, { groupPolicy: 'single' });
     const bytes = Uint8Array.from(atob('${sampleXlsxB64}'), c => c.charCodeAt(0));
@@ -232,10 +246,11 @@ async function main() {
   assert.equal(results.defaultDark, true);
   assert.equal(results.lightMode, true);
   assert.equal(results.hasDropZone, true);
+  assert.equal(results.hasRangePanel, false);
   assert.equal(results.rangeInitiallyHidden, true);
   assert.equal(results.hasTitlePill, false);
-  assert.deepEqual(results.flowOrder, ['inputPanel', 'scopePanel', 'rangePanel', 'runPanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
-  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px']);
+  assert.deepEqual(results.flowOrder, ['inputPanel', 'scopePanel', 'runPanel', 'progressPanel', 'logPanel', 'outputPanel', 'tracePanel', 'traceResultPanel']);
+  assert.deepEqual(results.panelBorders, ['1px', '1px', '1px', '1px', '1px', '1px', '1px', '1px']);
   assert.equal(results.traceHeading, '역추적');
   assert.equal(results.progressHeading, '결과 / 로그 확인');
   assert.equal(results.logHeading, '처리 로그');
@@ -245,14 +260,15 @@ async function main() {
   assert.equal(results.hasGroupSelect, false);
   assert.equal(results.scopeInitiallyHidden, true);
   assert.equal(results.scopeLabel, '입력값 IP 대역 확인');
-  assert.deepEqual(results.scopeModeOptions, ['checked', 'manual', 'both']);
-  assert.deepEqual(results.initialScopeModes, [false, false, false]);
+  assert.deepEqual(results.scopeModeOptions, []);
+  assert.deepEqual(results.initialScopeModes, []);
+  assert.deepEqual(results.bulkPolicyButtons, ['single', 'expand', 'subnet']);
   assert.equal(results.stepNoStyle.display, 'flex');
   assert.equal(results.stepNoStyle.alignItems, 'center');
   assert.equal(results.stepNoStyle.justifyContent, 'center');
-  assert.equal(results.groupLabel, '범위 확장');
-  assert.deepEqual(results.groupOptions, ['범위 확장 안함', '입력 구간만 확장', '대역 전체 추가']);
-  assert.ok(results.groupOptionTexts.every(x => /예:/.test(x)));
+  assert.equal(results.groupLabel, '');
+  assert.deepEqual(results.groupOptions, []);
+  assert.deepEqual(results.groupOptionTexts, []);
   assert.ok(results.buttonWidths.clear >= results.buttonWidths.attach - 4);
   assert.ok(results.buttonWidths.run >= results.buttonWidths.attach - 4);
   assert.ok(Math.abs(results.buttonWidths.copy - results.buttonWidths.download) <= 4);
@@ -277,8 +293,8 @@ async function main() {
   assert.equal(results.scopeSummary.includes('감지값'), false);
   assert.ok(results.scopeChecks.some(x => x.value === '12.123.0.0/20' && !x.checked));
   assert.ok(results.scopeChecks.every(x => !x.checked));
-  assert.deepEqual(results.scopeModesAfterInput, [false, false, false]);
-  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel', 'rangePanel', 'runPanel']);
+  assert.ok(results.scopePoliciesAfterInput.every(x => x.value === '' && x.disabled));
+  assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel', 'runPanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
   assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);
   assert.match(results.normalizedCidr.output, /123\.22\.92\.249/);
@@ -300,10 +316,15 @@ async function main() {
   assert.equal(results.maskExcluded.status, '스캔 대상 없음');
   assert.match(results.maskExcluded.scopeSummary, /255\.255\.255\.0/);
   assert.match(results.maskExcluded.scopeSummary, /255\.255\.255\.30/);
-  assert.deepEqual(results.customInternalVisible, ['inputPanel', 'scopePanel', 'rangePanel', 'runPanel']);
-  assert.match(results.preInfoAllowed.log, /스캔 대상 대역: 12\.123\.0\.0\/20, 100\.64\.0\.0\/10, 12\.123\.0\.0\/16/);
+  assert.deepEqual(results.customInternalVisible, ['inputPanel', 'scopePanel']);
+  assert.match(results.preInfoAllowed.log, /12\.123\.0\.0\/20=대역 전체 추가/);
+  assert.match(results.preInfoAllowed.log, /100\.64\.0\.0\/10=대역 전체 추가/);
   assert.equal(results.invalidExcluded.output, '192.168.0.5');
   assert.match(results.invalidExcluded.log, /자동 제외: 192\.168\.0\.999/);
+  assert.match(results.mixedPolicy.output, /^10\.0\.1\.1\n10\.0\.1\.2\n10\.0\.1\.3\n10\.0\.2\.0\n/);
+  assert.match(results.mixedPolicy.output, /\n10\.0\.2\.255$/);
+  assert.match(results.mixedPolicy.log, /10\.0\.1\.0\/24: 입력 구간만 확장 적용/);
+  assert.match(results.mixedPolicy.log, /10\.0\.2\.0\/24: 대역 전체 추가 적용/);
   assert.ok(results.logClasses.some(x => x.includes('warn')));
   assert.ok(results.logClasses.some(x => x.includes('ok')));
   assert.match(results.sample.stats, /최종 출력 IP/);
