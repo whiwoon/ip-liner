@@ -134,6 +134,7 @@ async function main() {
     out.initialScopeModes = [...document.querySelectorAll('input[name="scopeMode"]')].map(o => o.checked);
     out.bulkPolicyButtons = [...document.querySelectorAll('[data-bulk-policy]')].map(o => o.dataset.bulkPolicy);
     out.bulkPolicyButtonTexts = [...document.querySelectorAll('[data-bulk-policy]')].map(o => o.textContent);
+    out.policyDescriptionTexts = [...document.querySelectorAll('.policy-desc')].map(o => o.textContent.replace(/\s+/g, ' ').trim());
     out.runButtonText = $('runBtn').textContent;
     const no = document.querySelector('.step-no');
     const noStyle = getComputedStyle(no);
@@ -166,6 +167,12 @@ async function main() {
     out.buttonWidths.clear = Math.round($('clearBtn').getBoundingClientRect().width);
     out.scopeChecks = [...document.querySelectorAll('input[name="scopeItemCheck"]')].map(x => ({ value: x.value, checked: x.checked }));
     out.scopePoliciesAfterInput = [...document.querySelectorAll('select[name="scopePolicy"]')].map(x => ({ value: x.value, disabled: x.disabled }));
+    out.scopeLayout = {
+      actionsTop: Math.round(document.querySelector('.scope-actions').getBoundingClientRect().top),
+      summaryTop: Math.round($('scopeSummary').getBoundingClientRect().top),
+      manualTop: Math.round(document.querySelector('.custom-internal').getBoundingClientRect().top),
+      runTop: Math.round($('runBtn').getBoundingClientRect().top)
+    };
     selectAllScopes();
     chooseScopeMode('both');
     choosePolicy('single');
@@ -266,6 +273,9 @@ async function main() {
   assert.deepEqual(results.initialScopeModes, []);
   assert.deepEqual(results.bulkPolicyButtons, ['single', 'expand', 'subnet']);
   assert.deepEqual(results.bulkPolicyButtonTexts, ['범위 확장 안함', '입력구간 확장', '대역 전체 추가']);
+  assert.ok(results.policyDescriptionTexts.some(x => x.includes('범위 확장 안함') && x.includes('그대로 사용')));
+  assert.ok(results.policyDescriptionTexts.some(x => x.includes('입력구간 확장') && x.includes('가장 작은 IP')));
+  assert.ok(results.policyDescriptionTexts.some(x => x.includes('대역 전체 추가') && x.includes('/24 전체')));
   assert.equal(results.runButtonText, '정리 시작');
   assert.equal(results.stepNoStyle.display, 'flex');
   assert.equal(results.stepNoStyle.alignItems, 'center');
@@ -298,6 +308,9 @@ async function main() {
   assert.ok(results.scopeChecks.some(x => x.value === '12.123.0.0/20' && x.checked));
   assert.ok(results.scopeChecks.every(x => x.checked));
   assert.ok(results.scopePoliciesAfterInput.every(x => x.value === 'single' && !x.disabled));
+  assert.ok(results.scopeLayout.actionsTop < results.scopeLayout.summaryTop);
+  assert.ok(results.scopeLayout.summaryTop < results.scopeLayout.manualTop);
+  assert.ok(results.scopeLayout.manualTop < results.scopeLayout.runTop);
   assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
   assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);

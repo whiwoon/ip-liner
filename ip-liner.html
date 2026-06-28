@@ -60,7 +60,8 @@
     .scope-summary{display:grid;gap:8px;margin-top:12px}
     .scope-item{display:flex;align-items:flex-start;gap:10px;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--drop);font-size:13px;line-height:1.45}
     .scope-item input{margin-top:3px}.scope-item strong{display:block;margin-bottom:4px}.scope-item span{display:block;color:var(--muted)}
-    .scope-tools,.scope-policy-tools{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.scope-tools button,.scope-policy-tools button{padding:8px 10px;font-size:12px}
+    .scope-actions{display:grid;gap:8px;margin:10px 0 12px}.scope-tools,.scope-policy-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.scope-tools button,.scope-policy-tools button{padding:8px 10px;font-size:12px}.scope-policy-tools .help{margin-right:2px}
+    .policy-descriptions{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:2px}.policy-desc{border:1px solid var(--border);border-radius:8px;background:var(--drop);padding:9px 10px;font-size:12px;line-height:1.45}.policy-desc strong{display:block;margin-bottom:3px;color:var(--text)}.policy-desc span{color:var(--muted)}
     .scope-policy{margin-top:8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}.scope-policy label{margin:0;color:var(--muted);font-size:12px}.scope-policy select{min-width:160px;border:1px solid var(--border);background:var(--input);color:var(--text);border-radius:7px;padding:8px;font-size:13px}.scope-policy select:disabled{opacity:.5}
     .custom-internal{margin-top:14px}
     .check-card{display:flex;align-items:flex-start;gap:10px;padding:13px;border:1px solid var(--border);border-radius:9px;background:var(--paper);cursor:pointer;transition:.12s border-color,.12s background}
@@ -110,8 +111,15 @@
 
     <section class="panel scope-panel step-panel hidden" id="scopePanel">
       <div class="step-head"><span class="step-no">2</span><div><h2 class="section-title">정리 방식 선택</h2><div class="help">입력값에서 찾은 IP 대역을 확인하고, 대역별 정리 방식을 선택합니다. 호스트 IP가 아닌 값은 이 단계에서 제외됩니다.</div></div></div>
-      <div class="scope-tools"><button id="selectAllScopesBtn" class="secondary" type="button">전체 선택</button><button id="clearAllScopesBtn" class="secondary" type="button">전체 해제</button></div>
-      <div class="scope-policy-tools"><span class="help">선택 대역 일괄 적용:</span><button class="secondary" type="button" data-bulk-policy="single">범위 확장 안함</button><button class="secondary" type="button" data-bulk-policy="expand">입력구간 확장</button><button class="secondary" type="button" data-bulk-policy="subnet">대역 전체 추가</button></div>
+      <div class="scope-actions">
+        <div class="scope-tools"><button id="selectAllScopesBtn" class="secondary" type="button">전체 선택</button><button id="clearAllScopesBtn" class="secondary" type="button">전체 해제</button></div>
+        <div class="scope-policy-tools"><span class="help">선택 대역 일괄 적용:</span><button class="secondary" type="button" data-bulk-policy="single">범위 확장 안함</button><button class="secondary" type="button" data-bulk-policy="expand">입력구간 확장</button><button class="secondary" type="button" data-bulk-policy="subnet">대역 전체 추가</button></div>
+        <div class="policy-descriptions" aria-label="정리 방식 설명">
+          <div class="policy-desc"><strong>범위 확장 안함</strong><span>입력값에서 확인된 IP만 그대로 사용합니다.</span></div>
+          <div class="policy-desc"><strong>입력구간 확장</strong><span>같은 /24 안에서 가장 작은 IP부터 가장 큰 IP까지 채웁니다.</span></div>
+          <div class="policy-desc"><strong>대역 전체 추가</strong><span>선택 대역에 입력 IP가 있으면 해당 /24 전체를 포함합니다.</span></div>
+        </div>
+      </div>
       <div id="scopeSummary" class="scope-summary"></div>
       <div class="custom-internal">
         <label for="customInternalInput">수동 스캔 대상 대역</label>
