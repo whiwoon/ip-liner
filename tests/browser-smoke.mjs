@@ -173,6 +173,13 @@ async function main() {
       manualTop: Math.round(document.querySelector('.custom-internal').getBoundingClientRect().top),
       runTop: Math.round($('runBtn').getBoundingClientRect().top)
     };
+    const manualTextareaRect = $('customInternalInput').getBoundingClientRect();
+    const manualHelpRect = document.querySelector('.custom-internal .help').getBoundingClientRect();
+    const runButtonRect = $('runBtn').getBoundingClientRect();
+    out.manualSpacing = {
+      textareaToHelp: Math.round(manualHelpRect.top - manualTextareaRect.bottom),
+      helpToRun: Math.round(runButtonRect.top - manualHelpRect.bottom)
+    };
     selectAllScopes();
     chooseScopeMode('both');
     choosePolicy('single');
@@ -230,6 +237,12 @@ async function main() {
     await window.__ipLinerTest.loadExcel(file);
     out.excelStats = $('excelStats').textContent;
     out.excelText = $('inputText').value;
+    const encryptedBytes = Uint8Array.from(Array.from('EncryptedPackage').flatMap(ch => [ch.charCodeAt(0), 0]));
+    const encryptedFile = new File([encryptedBytes], 'locked.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    await window.__ipLinerTest.handleFile(encryptedFile);
+    out.encryptedExcelStats = $('excelStats').textContent;
+    out.encryptedExcelLog = $('log').textContent;
+    await window.__ipLinerTest.loadExcel(file);
     window.__ipLinerTest.analyzeInputScopes();
     selectAllScopes();
     chooseScopeMode('both');
@@ -311,6 +324,8 @@ async function main() {
   assert.ok(results.scopeLayout.actionsTop < results.scopeLayout.summaryTop);
   assert.ok(results.scopeLayout.summaryTop < results.scopeLayout.manualTop);
   assert.ok(results.scopeLayout.manualTop < results.scopeLayout.runTop);
+  assert.ok(results.manualSpacing.textareaToHelp >= 10);
+  assert.ok(results.manualSpacing.helpToRun >= 14);
   assert.deepEqual(results.afterPolicyVisible, ['inputPanel', 'scopePanel']);
   assert.match(results.normalizedCidr.output, /^12\.123\.0\.1/);
   assert.match(results.normalizedCidr.log, /CIDR 정규화: 12\.123\.12\.201\/20 → 12\.123\.0\.0\/20/);
@@ -348,6 +363,9 @@ async function main() {
   assert.match(results.sample.log, /총 입력 건수: 5,000개/);
   assert.match(results.excelStats, /IP 후보/);
   assert.match(results.excelText, /192\.168\.20\.1-5/);
+  assert.match(results.encryptedExcelStats, /암호화된 엑셀 파일/);
+  assert.match(results.encryptedExcelStats, /비밀번호를 해제/);
+  assert.match(results.encryptedExcelLog, /암호화된 엑셀 파일/);
   assert.match(results.excelOutput, /192\.168\.10\.25/);
   assert.match(results.excelOutput, /100\.64\.4\.250/);
   assert.match(results.excelOutput, /100\.64\.5\.10/);
